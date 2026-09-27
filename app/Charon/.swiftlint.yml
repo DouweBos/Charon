@@ -1,6 +1,7 @@
 excluded:
   - ${PWD}/Charon.xcodeproj
   - ${PWD}/build
+  - ${PWD}/scripts
   - ${PWD}/Packages/CharonKit/.build
 
 disabled_rules:
