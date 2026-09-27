@@ -39,22 +39,17 @@ struct OffloadView: View {
                 }
             }
 
-            if offload.records.isEmpty {
-                ContentUnavailableView(
-                    "Nothing has crossed yet", systemImage: "water.waves",
-                    description: Text(
-                        "Right-click a folder in Analyze and choose Move to External Drive. "
-                            + "Charon copies it, verifies every byte, and leaves a symlink behind."
-                    )
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: Theme.Spacing.sm) {
-                        ForEach(offload.records) { record in
-                            OffloadRecordRow(record: record, status: offload.status(of: record))
-                        }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                    if offload.records.isEmpty {
+                        Text("Nothing offloaded yet. Charon copies a folder to the external drive, checks every byte, "
+                             + "then leaves a link in its place so apps still find it.")
+                            .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
                     }
+                    ForEach(offload.records) { record in
+                        OffloadRecordRow(record: record, status: offload.status(of: record))
+                    }
+                    OffloadSuggestionsSection()
                 }
             }
         }

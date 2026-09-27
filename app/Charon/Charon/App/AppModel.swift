@@ -72,6 +72,16 @@ final class AppModel {
         return max(volume.usedBytes - tree.size(DiskTree.root), 0)
     }
 
+    var hasBootScan: Bool {
+        volumes.bootVolume.flatMap { analyze.state(for: $0.id)?.tree } != nil
+    }
+
+    /// Largest safe-to-move folders in the home directory, from the startup disk scan.
+    var offloadSuggestions: [OffloadSuggestion] {
+        guard let boot = volumes.bootVolume, let tree = analyze.state(for: boot.id)?.tree else { return [] }
+        return OffloadSuggester().suggestions(in: tree, existing: offload.records)
+    }
+
     func focus(_ node: DiskTree.NodeID) {
         guard let tree = currentScan?.tree else { return }
         navigator.focus(node == DiskTree.root ? nil : tree.displayPath(node))

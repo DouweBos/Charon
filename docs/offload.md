@@ -47,3 +47,7 @@ Move back mirrors it (`returnCopying` → `returnVerifying` → `returnSwapping`
 | Broken | The symlink or the copy changed outside Charon; Forget drops the record |
 
 Space freed is the total bytes of offloaded records. The manifest lives at `~/Library/Application Support/Charon/manifest.plist` and is mirrored to `<Drive>/Charon/manifest.plist`.
+
+## Suggestions
+
+The Offload tab suggests up to eight folders from the last startup disk scan: folders in your home directory of at least 1 GB, up to four levels deep, that pass every path rule above without warnings. Suggestions never overlap each other or anything already offloaded; the larger folder wins. Logic lives in `OffloadSuggester`.
