@@ -10,6 +10,7 @@ A native macOS disk analyzer built with SwiftUI. It shows where the space on any
 - Clean: sizes Xcode, simulator, package-manager and app caches, logs and leftovers, and moves them to the Trash
 - Uninstall: apps by size and last use, with their leftovers in ~/Library
 - Optimize: background launch agents and daemons, flagging ones whose app is gone
+- Duplicates: identical large files (size, sampled hash, full SHA-256), skipping APFS clones
 - Collector: gather files and folders, review the total, move them to the Trash (protected locations refused)
 - "System & other" breakdown: system volume, VM/Preboot/Recovery, purgeable, restricted
 - Offload: preflight safety checks, copy, SHA-256 verification of every file, then symlink swap

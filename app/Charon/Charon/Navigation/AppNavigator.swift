@@ -41,13 +41,14 @@ enum AppSheet: String, Identifiable {
 }
 
 enum AnalyzeMode: String, CaseIterable, Hashable {
-    case map, files, changes
+    case map, files, changes, duplicates
 
     var title: String {
         switch self {
         case .map: "Map"
         case .files: "Largest Files"
         case .changes: "Changes"
+        case .duplicates: "Duplicates"
         }
     }
 }

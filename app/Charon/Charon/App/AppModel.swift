@@ -20,6 +20,7 @@ final class AppModel {
     let clean = CleanViewModel()
     let uninstall = UninstallViewModel()
     let optimize = OptimizeViewModel()
+    let duplicates = DuplicatesViewModel()
     private(set) var hasFullDiskAccess = SystemIntegration.hasFullDiskAccess
     private(set) var dismissedAccessBanner = false
     /// Folders every scan skips, as user-facing paths.

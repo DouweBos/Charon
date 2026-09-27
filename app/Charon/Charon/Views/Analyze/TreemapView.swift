@@ -29,6 +29,8 @@ struct TreemapPanel: View {
             ZStack {
                 if navigator.analyzeMode == .changes {
                     ChangesView()
+                } else if navigator.analyzeMode == .duplicates {
+                    DuplicatesView()
                 } else if let tree = model.currentScan?.tree, navigator.analyzeMode == .files {
                     LargestFilesView(tree: tree, focus: model.focusNode)
                 } else if let tree = model.currentScan?.tree {

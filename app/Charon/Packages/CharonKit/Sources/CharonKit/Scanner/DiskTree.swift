@@ -96,6 +96,11 @@ public struct DiskTree: Sendable {
         lineage(id).dropFirst().map { names[Int($0)] }
     }
 
+    /// False for nodes left behind by `detach` or `graft`, which are kept in the arrays but unreachable.
+    public func isAttached(_ id: NodeID) -> Bool {
+        lineage(id).first == Self.root
+    }
+
     public func realPath(_ id: NodeID) -> String {
         Self.join(rootPath, components(id))
     }

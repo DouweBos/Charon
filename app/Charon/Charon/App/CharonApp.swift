@@ -25,6 +25,7 @@ struct CharonApp: App {
                 .environment(model.clean)
                 .environment(model.uninstall)
                 .environment(model.optimize)
+                .environment(model.duplicates)
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1180, height: 780)
