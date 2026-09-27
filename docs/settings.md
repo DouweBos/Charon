@@ -11,6 +11,7 @@ All settings are in UserDefaults (`com.houwert.Charon`) and, unless noted, in th
 | `stats.visible` | true | Treemap | Show the live stat cards under Analyze. |
 | `offload.driveFolder` | `Charon` | Offload | Folder at the root of the external drive that holds offloaded directories. Takes effect after relaunch. |
 | `offload.driveVolumeID` | none | Offload tab | The chosen external drive (volume UUID). Set from the external drive card, not the Settings window. |
+| `scan.excludedPaths` | empty | Skipped folders | Folders every scan skips (also via Skip in Future Scans in Analyze). Their space shows up in System & other. |
 | `scan.recentFolders` | empty | Disk menu | Up to 8 recently scanned folders, listed under Folders in the disk menu. |
 | `monitor.lowGigabytes` | 20 | Menu Bar Monitor | Warn when free space drops below this many GB… |
 | `monitor.lowPercent` | 5 | Menu Bar Monitor | …or below this share of the disk, whichever is larger. |

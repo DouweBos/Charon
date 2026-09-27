@@ -14,6 +14,8 @@ public struct ScanOptions: Sendable, Hashable {
     public var measurePrivateSize: Bool
     public var workerCount: Int
     public var snapshotInterval: Duration
+    /// Real paths of directories to skip entirely.
+    public var excludedPaths: Set<String> = []
 
     public init(
         largeFileThreshold: Int64 = 50_000_000,
@@ -169,6 +171,7 @@ final class ScanJob: @unchecked Sendable {
         var fileCount: Int64 = 0
         var subdirectories: [String] = []
         var largeFiles: [LargeFile] = []
+        let prefix = path.hasSuffix("/") ? path : path + "/"
 
         do {
             try reader.read(path: path) { entry in
@@ -176,6 +179,7 @@ final class ScanJob: @unchecked Sendable {
                 case .directory:
                     // Other devices are mount points (external disks, the system volume); dataless dirs would download.
                     guard entry.device == device, entry.flags & Self.datalessFlag == 0 else { return }
+                    guard options.excludedPaths.isEmpty || !options.excludedPaths.contains(prefix + entry.name) else { return }
                     subdirectories.append(entry.name)
                 case .file, .symlink, .other:
                     if entry.linkCount > 1, entry.type == .file, !firstSighting(of: entry.fileID) { return }
@@ -205,7 +209,6 @@ final class ScanJob: @unchecked Sendable {
             state.progress.filesScanned += fileCount
             state.progress.directoriesScanned += 1
             state.progress.bytesScanned += looseBytes
-            let prefix = path.hasSuffix("/") ? path : path + "/"
             return subdirectories.map { name in
                 let child = state.tree.addNode(name: name, parent: node, kind: .directory)
                 state.tree.accumulate(into: child, size: 0, privateSize: 0, items: 1)

@@ -79,4 +79,16 @@ struct DiskScannerTests {
         let result = try await scan(temp.url)
         #expect(result.progress.unreadableDirectories == 1)
     }
+
+    @Test func skipsExcludedDirectories() async throws {
+        let temp = try TempDirectory()
+        try temp.file("keep/a.bin", bytes: 200_000)
+        try temp.file("skip/b.bin", bytes: 200_000)
+        var options = ScanOptions(largeFileThreshold: 100_000)
+        options.excludedPaths = [temp.url.path + "/skip"]
+
+        let tree = try await scan(temp.url, options: options).tree
+        #expect(tree.node(atDisplayPath: "/keep") != nil)
+        #expect(tree.node(atDisplayPath: "/skip") == nil)
+    }
 }

@@ -22,6 +22,8 @@ final class AppModel {
     let optimize = OptimizeViewModel()
     private(set) var hasFullDiskAccess = SystemIntegration.hasFullDiskAccess
     private(set) var dismissedAccessBanner = false
+    /// Folders every scan skips, as user-facing paths.
+    private(set) var excludedPaths: [String] = UserDefaults.standard.stringArray(forKey: AppSettings.excludedPaths) ?? []
 
     init() {
         navigator.setDefaultTarget(volumes.bootVolume?.id)
@@ -104,6 +106,26 @@ final class AppModel {
     func startCurrentScan() {
         guard let target = currentTarget else { return }
         analyze.scanIfNeeded(target)
+    }
+
+    func exclude(_ path: String) {
+        let path = OffloadPreflight.userFacingPath(path)
+        guard !excludedPaths.contains(path) else { return }
+        excludedPaths.append(path)
+        excludedPaths.sort()
+        UserDefaults.standard.set(excludedPaths, forKey: AppSettings.excludedPaths)
+        analyze.detach(displayPath: path)
+    }
+
+    func removeExclusion(_ path: String) {
+        excludedPaths.removeAll { $0 == path }
+        UserDefaults.standard.set(excludedPaths, forKey: AppSettings.excludedPaths)
+    }
+
+    func chooseExclusion() {
+        if let url = SystemIntegration.chooseDirectory(message: "Choose a folder for scans to skip.") {
+            exclude(url.path)
+        }
     }
 
     func rescanFolder(_ displayPath: String) {

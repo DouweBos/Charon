@@ -15,6 +15,7 @@ enum AppSettings {
     static let driveVolumeID = "offload.driveVolumeID"
     static let driveFolder = "offload.driveFolder"
     static let recentFolders = "scan.recentFolders"
+    static let excludedPaths = "scan.excludedPaths"
     static let accessPromptShown = "onboarding.accessPromptShown"
 
     static func registerDefaults() {
@@ -31,10 +32,14 @@ enum AppSettings {
 
     static var scanOptions: ScanOptions {
         let defaults = UserDefaults.standard
-        return ScanOptions(
+        var options = ScanOptions(
             largeFileThreshold: Int64(max(defaults.integer(forKey: largeFileThresholdMB), 1)) * 1_000_000,
             measurePrivateSize: defaults.bool(forKey: measurePrivateSize)
         )
+        // The boot disk is scanned through the Data volume, so match both spellings of each path.
+        let excluded = defaults.stringArray(forKey: excludedPaths) ?? []
+        options.excludedPaths = Set(excluded + excluded.map { "/System/Volumes/Data" + $0 })
+        return options
     }
 
     static var driveFolderName: String {

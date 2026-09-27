@@ -118,6 +118,7 @@ struct NodeActions: View {
         Button("Reveal in Finder", systemImage: "folder") { SystemIntegration.revealInFinder(path) }
         if isDirectory {
             Button("Rescan This Folder", systemImage: "arrow.clockwise") { model.rescanFolder(path) }
+            Button("Skip in Future Scans", systemImage: "eye.slash") { model.exclude(path) }
         }
         Button("Copy Path", systemImage: "doc.on.doc") {
             NSPasteboard.general.clearContents()

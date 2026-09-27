@@ -33,6 +33,22 @@ struct SettingsView: View {
                 Text("Counts only bytes not shared with clones. Slower, and local Time Machine snapshots make it read low.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            Section("Skipped folders") {
+                if model.excludedPaths.isEmpty {
+                    Text("None. Right-click a folder in Analyze and choose Skip in Future Scans.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                ForEach(model.excludedPaths, id: \.self) { path in
+                    HStack {
+                        Text(path).font(.monoCaption).lineLimit(1).truncationMode(.middle)
+                        Spacer()
+                        Button { model.removeExclusion(path) } label: { Image(systemName: "minus.circle") }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Stop skipping \(path)")
+                    }
+                }
+                Button("Add Folder…") { model.chooseExclusion() }
+            }
             Section("Treemap") {
                 Picker("Nesting depth", selection: $treemapDepth) {
                     Text("1 level").tag(1)
