@@ -1,6 +1,6 @@
 # Charon
 
-A native macOS disk analyzer built with SwiftUI. It shows where the space on any disk goes, and ferries heavy directories to an external drive (the Other Shore), leaving a symlink behind so everything keeps working.
+A native macOS disk analyzer built with SwiftUI. It shows where the space on any disk goes, and offloads heavy directories to an external drive (the external drive), leaving a symlink behind so everything keeps working.
 
 ## Features
 
@@ -9,9 +9,9 @@ A native macOS disk analyzer built with SwiftUI. It shows where the space on any
 - Nested, drillable treemap with a matching sidebar and back/forward history
 - Collector: gather files and folders, review the total, move them to the Trash (protected locations refused)
 - "System & other" breakdown: system volume, VM/Preboot/Recovery, purgeable, restricted
-- Ferry: preflight safety checks, copy, SHA-256 verification of every file, then symlink swap
-- Ferried directory tracking: Ferried, Stranded (drive unplugged), Relocated, Broken; Bring home and Relink
-- Crash-safe journal: interrupted ferries finish or roll back on next launch
+- Offload: preflight safety checks, copy, SHA-256 verification of every file, then symlink swap
+- Offloaded directory tracking: Offloaded, Disconnected (drive unplugged), Drive moved, Broken; Move back and Relink
+- Crash-safe journal: interrupted offloads finish or roll back on next launch
 - Live CPU, memory, disk, battery and network cards
 
 ## Keyboard
@@ -48,5 +48,5 @@ Engine tests run headlessly: `cd app/Charon/Packages/CharonKit && swift test`.
 ## Docs
 
 - [Architecture](docs/architecture.md)
-- [Ferry](docs/ferry.md)
+- [Offload](docs/offload.md)
 - [Settings](docs/settings.md)

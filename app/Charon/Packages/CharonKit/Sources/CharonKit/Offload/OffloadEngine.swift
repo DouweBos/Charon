@@ -1,13 +1,13 @@
-// Ferry/Ferryman.swift
+// Offload/OffloadEngine.swift
 // CharonKit
 //
-// Ferries directories to a shore and brings them home. Every step is journaled in the manifest before it
+// Offloads directories to a drive and moves them back. Every step is journaled in the manifest before it
 // runs, so a crash, cancel or unplugged drive always leaves the original or a verified copy in place.
 
 import Darwin
 import Foundation
 
-public struct FerryProgress: Sendable, Hashable {
+public struct OffloadProgress: Sendable, Hashable {
     public enum Stage: String, Sendable { case copying, verifying, swapping, cleaning }
 
     public var stage: Stage
@@ -44,51 +44,51 @@ public struct FaultInjector: Sendable {
     }
 }
 
-public actor Ferryman {
+public actor OffloadEngine {
     private let store: ManifestStore
     private let resolver: any VolumeResolving
     private let faults: FaultInjector?
-    private let shoreFolder: String
-    private var manifest: FerryManifest
+    private let driveFolder: String
+    private var manifest: OffloadManifest
 
     public init(
         store: ManifestStore, resolver: any VolumeResolving = VolumeCatalog(),
-        shoreFolder: String = "Charon", faults: FaultInjector? = nil
+        driveFolder: String = "Charon", faults: FaultInjector? = nil
     ) {
         self.store = store
         self.resolver = resolver
-        self.shoreFolder = shoreFolder
+        self.driveFolder = driveFolder
         self.faults = faults
-        manifest = (try? store.load()) ?? FerryManifest()
+        manifest = (try? store.load()) ?? OffloadManifest()
     }
 
-    public var records: [FerryRecord] { manifest.records }
+    public var records: [OffloadRecord] { manifest.records }
 
-    /// Total bytes currently living on other shores.
-    public var obols: Int64 {
-        manifest.records.filter { $0.phase == .ferried }.reduce(0) { $0 + $1.bytes }
+    /// Total bytes currently living on other drives.
+    public var freedBytes: Int64 {
+        manifest.records.filter { $0.phase == .offloaded }.reduce(0) { $0 + $1.bytes }
     }
 
-    // MARK: - Ferry
+    // MARK: - Offload
 
-    public func ferry(
-        _ source: URL, to shore: Shore, progress: @escaping @Sendable (FerryProgress) -> Void = { _ in }
-    ) async throws -> FerryRecord {
+    public func offload(
+        _ source: URL, to drive: OffloadDrive, progress: @escaping @Sendable (OffloadProgress) -> Void = { _ in }
+    ) async throws -> OffloadRecord {
         let source = source.standardizedFileURL
         var info = stat()
-        guard lstat(source.path, &info) == 0 else { throw FerryError.sourceMissing(source.path) }
-        guard info.st_mode & S_IFMT == S_IFDIR else { throw FerryError.sourceNotADirectory(source.path) }
-        guard let mount = resolver.mountPoint(forVolumeUUID: shore.volumeUUID) else {
-            throw FerryError.shoreUnavailable(shore.name)
+        guard lstat(source.path, &info) == 0 else { throw OffloadError.sourceMissing(source.path) }
+        guard info.st_mode & S_IFMT == S_IFDIR else { throw OffloadError.sourceNotADirectory(source.path) }
+        guard let mount = resolver.mountPoint(forVolumeUUID: drive.volumeUUID) else {
+            throw OffloadError.driveUnavailable(drive.name)
         }
-        guard !manifest.records.contains(where: { $0.originalPath == source.path }) else { throw FerryError.recordBusy }
+        guard !manifest.records.contains(where: { $0.originalPath == source.path }) else { throw OffloadError.recordBusy }
 
         let (bytes, files) = try await runBlocking { _ in try Self.measure(source) }
         let id = UUID()
-        var record = FerryRecord(
+        var record = OffloadRecord(
             id: id, originalPath: source.path,
-            shore: Shore(volumeUUID: shore.volumeUUID, name: shore.name, mountPoint: mount),
-            shoreRelativePath: "\(shoreFolder)/\(id.uuidString)/\(source.lastPathComponent)",
+            drive: OffloadDrive(volumeUUID: drive.volumeUUID, name: drive.name, mountPoint: mount),
+            driveRelativePath: "\(driveFolder)/\(id.uuidString)/\(source.lastPathComponent)",
             bytes: bytes, fileCount: files, phase: .copying, startedAt: Date()
         )
         try commit(record)
@@ -98,7 +98,7 @@ public actor Ferryman {
             try FileManager.default.createDirectory(at: copy.deletingLastPathComponent(), withIntermediateDirectories: true)
             let faults = faults
             try await runBlocking { flag in
-                var copier = TreeCopier(flag: flag) { progress(FerryProgress(stage: .copying, bytesDone: $0, bytesTotal: bytes)) }
+                var copier = TreeCopier(flag: flag) { progress(OffloadProgress(stage: .copying, bytesDone: $0, bytesTotal: bytes)) }
                 copier.afterFile = { try faults?.hook(.copiedFile($0)) }
                 try copier.copy(from: source, to: copy)
             }
@@ -107,13 +107,13 @@ public actor Ferryman {
             record.phase = .verifying
             try commit(record)
             let digest = try await runBlocking { flag in
-                try TreeVerifier(flag: flag) { progress(FerryProgress(stage: .verifying, bytesDone: $0, bytesTotal: bytes)) }
+                try TreeVerifier(flag: flag) { progress(OffloadProgress(stage: .verifying, bytesDone: $0, bytesTotal: bytes)) }
                     .verify(source: source, copy: copy)
             }
             let fingerprint = try TreeFingerprint.capture(source)
             record.treeDigest = digest
 
-            progress(FerryProgress(stage: .swapping, bytesDone: bytes, bytesTotal: bytes))
+            progress(OffloadProgress(stage: .swapping, bytesDone: bytes, bytesTotal: bytes))
             record.phase = .swapping
             try commit(record)
             try swapInSymlink(record, copy: copy, fingerprint: fingerprint)
@@ -121,11 +121,11 @@ public actor Ferryman {
             try fault(.beforeCleanup)
             record.phase = .cleaning
             try commit(record)
-            progress(FerryProgress(stage: .cleaning, bytesDone: bytes, bytesTotal: bytes))
+            progress(OffloadProgress(stage: .cleaning, bytesDone: bytes, bytesTotal: bytes))
             let hidden = record.hiddenSourceURL
             try await runBlocking { _ in try FileManager.default.removeItem(at: hidden) }
 
-            record.phase = .ferried
+            record.phase = .offloaded
             record.ferriedAt = Date()
             try commit(record)
             return record
@@ -139,7 +139,7 @@ public actor Ferryman {
         }
     }
 
-    private func swapInSymlink(_ record: FerryRecord, copy: URL, fingerprint: String) throws {
+    private func swapInSymlink(_ record: OffloadRecord, copy: URL, fingerprint: String) throws {
         let original = record.originalURL
         try posixCheck(rename(original.path, record.hiddenSourceURL.path))
         try fault(.afterRenameSource)
@@ -147,33 +147,33 @@ public actor Ferryman {
         // Writes that landed between verification and the rename would be lost; put the original back.
         guard (try? TreeFingerprint.capture(record.hiddenSourceURL)) == fingerprint else {
             try posixCheck(rename(record.hiddenSourceURL.path, original.path))
-            throw FerryError.changedDuringFerry(record.originalPath)
+            throw OffloadError.changedDuringOffload(record.originalPath)
         }
         try posixCheck(symlink(copy.path, original.path))
         try fault(.afterSymlink)
     }
 
-    // MARK: - Bring home
+    // MARK: - Move back
 
-    public func bringHome(
-        _ id: UUID, progress: @escaping @Sendable (FerryProgress) -> Void = { _ in }
+    public func moveBack(
+        _ id: UUID, progress: @escaping @Sendable (OffloadProgress) -> Void = { _ in }
     ) async throws {
-        guard var record = manifest.records.first(where: { $0.id == id }) else { throw FerryError.recordNotFound }
-        guard record.phase == .ferried else { throw FerryError.recordBusy }
-        guard let mount = resolver.mountPoint(forVolumeUUID: record.shore.volumeUUID) else {
-            throw FerryError.shoreUnavailable(record.shore.name)
+        guard var record = manifest.records.first(where: { $0.id == id }) else { throw OffloadError.recordNotFound }
+        guard record.phase == .offloaded else { throw OffloadError.recordBusy }
+        guard let mount = resolver.mountPoint(forVolumeUUID: record.drive.volumeUUID) else {
+            throw OffloadError.driveUnavailable(record.drive.name)
         }
         let copy = record.copyURL(mountPoint: mount)
         guard let linkTarget = try? FileManager.default.destinationOfSymbolicLink(atPath: record.originalPath) else {
-            throw FerryError.brokenLink("\(record.originalPath) is no longer a symlink, so it can't be replaced.")
+            throw OffloadError.brokenLink("\(record.originalPath) is no longer a symlink, so it can't be replaced.")
         }
         guard FileManager.default.fileExists(atPath: copy.path) else {
-            throw FerryError.brokenLink("The copy on \(record.shore.name) is missing.")
+            throw OffloadError.brokenLink("The copy on \(record.drive.name) is missing.")
         }
         let (bytes, _) = try await runBlocking { _ in try Self.measure(copy) }
         if let home = resolver.volume(containing: record.originalURL.deletingLastPathComponent()),
            home.availableBytes < bytes {
-            throw FerryError.notEnoughSpace(needed: bytes, available: home.availableBytes)
+            throw OffloadError.notEnoughSpace(needed: bytes, available: home.availableBytes)
         }
 
         let staging = record.returnStagingURL
@@ -182,7 +182,7 @@ public actor Ferryman {
         do {
             let faults = faults
             try await runBlocking { flag in
-                var copier = TreeCopier(flag: flag) { progress(FerryProgress(stage: .copying, bytesDone: $0, bytesTotal: bytes)) }
+                var copier = TreeCopier(flag: flag) { progress(OffloadProgress(stage: .copying, bytesDone: $0, bytesTotal: bytes)) }
                 copier.afterFile = { try faults?.hook(.returnCopiedFile($0)) }
                 try copier.copy(from: copy, to: staging)
             }
@@ -190,15 +190,15 @@ public actor Ferryman {
             record.phase = .returnVerifying
             try commit(record)
             _ = try await runBlocking { flag in
-                try TreeVerifier(flag: flag) { progress(FerryProgress(stage: .verifying, bytesDone: $0, bytesTotal: bytes)) }
+                try TreeVerifier(flag: flag) { progress(OffloadProgress(stage: .verifying, bytesDone: $0, bytesTotal: bytes)) }
                     .verify(source: copy, copy: staging)
             }
 
             record.phase = .returnSwapping
             try commit(record)
-            progress(FerryProgress(stage: .swapping, bytesDone: bytes, bytesTotal: bytes))
+            progress(OffloadProgress(stage: .swapping, bytesDone: bytes, bytesTotal: bytes))
             guard (try? FileManager.default.destinationOfSymbolicLink(atPath: record.originalPath)) == linkTarget else {
-                throw FerryError.brokenLink("\(record.originalPath) changed while bringing it home.")
+                throw OffloadError.brokenLink("\(record.originalPath) changed while moving it back.")
             }
             try posixCheck(unlink(record.originalPath))
             try fault(.afterRemoveSymlink)
@@ -207,7 +207,7 @@ public actor Ferryman {
             try fault(.beforeReturnCleanup)
             record.phase = .returnCleaning
             try commit(record)
-            progress(FerryProgress(stage: .cleaning, bytesDone: bytes, bytesTotal: bytes))
+            progress(OffloadProgress(stage: .cleaning, bytesDone: bytes, bytesTotal: bytes))
             let container = record.containerURL(mountPoint: mount)
             try await runBlocking { _ in try FileManager.default.removeItem(at: container) }
             try remove(record)
@@ -223,26 +223,26 @@ public actor Ferryman {
 
     // MARK: - Maintenance
 
-    public func status(of record: FerryRecord) -> FerryStatus {
-        FerryStatus.resolve(record, resolver: resolver)
+    public func status(of record: OffloadRecord) -> OffloadStatus {
+        OffloadStatus.resolve(record, resolver: resolver)
     }
 
-    /// Points the symlink at the shore's current mount point (e.g. after it remounted as "Shore 1").
+    /// Points the symlink at the drive's current mount point (e.g. after it remounted as "Backup 1").
     public func relink(_ id: UUID) throws {
-        guard var record = manifest.records.first(where: { $0.id == id }), record.phase == .ferried else {
-            throw FerryError.recordNotFound
+        guard var record = manifest.records.first(where: { $0.id == id }), record.phase == .offloaded else {
+            throw OffloadError.recordNotFound
         }
-        guard let mount = resolver.mountPoint(forVolumeUUID: record.shore.volumeUUID) else {
-            throw FerryError.shoreUnavailable(record.shore.name)
+        guard let mount = resolver.mountPoint(forVolumeUUID: record.drive.volumeUUID) else {
+            throw OffloadError.driveUnavailable(record.drive.name)
         }
         guard (try? FileManager.default.destinationOfSymbolicLink(atPath: record.originalPath)) != nil else {
-            throw FerryError.brokenLink("\(record.originalPath) is no longer a symlink.")
+            throw OffloadError.brokenLink("\(record.originalPath) is no longer a symlink.")
         }
         let temporary = record.originalURL.deletingLastPathComponent().appendingPathComponent(".\(record.name).charon-link")
         unlink(temporary.path)
         try posixCheck(symlink(record.copyURL(mountPoint: mount).path, temporary.path))
         try posixCheck(rename(temporary.path, record.originalPath))
-        record.shore.mountPoint = mount
+        record.drive.mountPoint = mount
         try commit(record)
     }
 
@@ -264,37 +264,37 @@ public actor Ferryman {
 
     // MARK: - Journal
 
-    func commit(_ record: FerryRecord) throws {
+    func commit(_ record: OffloadRecord) throws {
         if let index = manifest.records.firstIndex(where: { $0.id == record.id }) {
             manifest.records[index] = record
         } else {
             manifest.records.append(record)
         }
         try store.save(manifest)
-        mirror(to: record.shore)
+        mirror(to: record.drive)
     }
 
-    func remove(_ record: FerryRecord) throws {
+    func remove(_ record: OffloadRecord) throws {
         manifest.records.removeAll { $0.id == record.id }
         try store.save(manifest)
-        mirror(to: record.shore)
+        mirror(to: record.drive)
     }
 
-    func update(_ record: FerryRecord) {
+    func update(_ record: OffloadRecord) {
         try? commit(record)
     }
 
-    func record(_ id: UUID) -> FerryRecord? {
+    func record(_ id: UUID) -> OffloadRecord? {
         manifest.records.first { $0.id == id }
     }
 
     var volumeResolver: any VolumeResolving { resolver }
 
-    private func mirror(to shore: Shore) {
-        guard let mount = resolver.mountPoint(forVolumeUUID: shore.volumeUUID) else { return }
-        let records = manifest.records.filter { $0.shore.volumeUUID == shore.volumeUUID }
-        let url = mount.appendingPathComponent(shoreFolder).appendingPathComponent("manifest.plist")
-        try? ManifestStore.write(FerryManifest(records: records), to: url)
+    private func mirror(to drive: OffloadDrive) {
+        guard let mount = resolver.mountPoint(forVolumeUUID: drive.volumeUUID) else { return }
+        let records = manifest.records.filter { $0.drive.volumeUUID == drive.volumeUUID }
+        let url = mount.appendingPathComponent(driveFolder).appendingPathComponent("manifest.plist")
+        try? ManifestStore.write(OffloadManifest(records: records), to: url)
     }
 
     private func fault(_ point: FaultPoint) throws {
@@ -304,7 +304,7 @@ public actor Ferryman {
     static func measure(_ url: URL) throws -> (bytes: Int64, files: Int64) {
         let keys: Set<URLResourceKey> = [.totalFileAllocatedSizeKey, .isRegularFileKey]
         guard let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: Array(keys)) else {
-            throw FerryError.sourceMissing(url.path)
+            throw OffloadError.sourceMissing(url.path)
         }
         var bytes: Int64 = 0
         var files: Int64 = 0

@@ -49,8 +49,8 @@ public struct VolumeInfo: Sendable, Hashable, Identifiable, Codable {
         return mountPoint
     }
 
-    /// Shores need to hold arbitrary directories and not be the disk we're freeing.
-    public var canBeShore: Bool { !isBoot && !isReadOnly }
+    /// Drives need to hold arbitrary directories and not be the disk we're freeing.
+    public var canBeOffloadDrive: Bool { !isBoot && !isReadOnly }
 
     /// exFAT/FAT drop POSIX permissions, ACLs and xattrs.
     public var preservesMetadata: Bool {

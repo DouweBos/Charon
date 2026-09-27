@@ -1,4 +1,4 @@
-// FerryPreflightTests.swift
+// OffloadPreflightTests.swift
 // CharonKitTests
 
 import Foundation
@@ -10,16 +10,16 @@ struct StubInspector: ProcessInspecting {
     func processes(using path: String) -> [ProcessUsage] { usages }
 }
 
-struct FerryPreflightTests {
+struct OffloadPreflightTests {
     private let home = URL(fileURLWithPath: "/Users/tester")
 
-    private func preflight(_ inspector: StubInspector = StubInspector()) -> FerryPreflight {
-        FerryPreflight(homeDirectory: home, resolver: MockResolver(), inspector: inspector)
+    private func preflight(_ inspector: StubInspector = StubInspector()) -> OffloadPreflight {
+        OffloadPreflight(homeDirectory: home, resolver: MockResolver(), inspector: inspector)
     }
 
-    private func shore(available: Int64 = 1_000_000_000_000, fileSystem: String = "apfs") -> VolumeInfo {
+    private func drive(available: Int64 = 1_000_000_000_000, fileSystem: String = "apfs") -> VolumeInfo {
         VolumeInfo(
-            id: "S", name: "Styx", mountPoint: URL(fileURLWithPath: "/Volumes/Styx"), uuid: "S",
+            id: "S", name: "Backup", mountPoint: URL(fileURLWithPath: "/Volumes/Backup"), uuid: "S",
             totalBytes: 2_000_000_000_000, availableBytes: available, fileSystem: fileSystem,
             isBoot: false, isInternal: false, isEjectable: true, isReadOnly: false
         )
@@ -45,16 +45,16 @@ struct FerryPreflightTests {
     }
 
     @Test func userFacingPathStripsTheDataVolume() {
-        #expect(FerryPreflight.userFacingPath("/System/Volumes/Data/Users/x") == "/Users/x")
-        #expect(FerryPreflight.userFacingPath("/Users/x") == "/Users/x")
+        #expect(OffloadPreflight.userFacingPath("/System/Volumes/Data/Users/x") == "/Users/x")
+        #expect(OffloadPreflight.userFacingPath("/Users/x") == "/Users/x")
     }
 
-    @Test func shoreRules() {
+    @Test func driveRules() {
         let rules = preflight()
-        #expect(rules.shoreRules(shore: nil, sourcePath: "/x", bytes: 1).map(\.severity) == [.blocker])
-        #expect(rules.shoreRules(shore: shore(available: 500), sourcePath: "/x", bytes: 1_000).map(\.severity) == [.blocker])
-        #expect(rules.shoreRules(shore: shore(fileSystem: "exfat"), sourcePath: "/x", bytes: 1).map(\.severity) == [.warning])
-        #expect(rules.shoreRules(shore: shore(), sourcePath: "/x", bytes: 1).isEmpty)
+        #expect(rules.driveRules(drive: nil, sourcePath: "/x", bytes: 1).map(\.severity) == [.blocker])
+        #expect(rules.driveRules(drive: drive(available: 500), sourcePath: "/x", bytes: 1_000).map(\.severity) == [.blocker])
+        #expect(rules.driveRules(drive: drive(fileSystem: "exfat"), sourcePath: "/x", bytes: 1).map(\.severity) == [.warning])
+        #expect(rules.driveRules(drive: drive(), sourcePath: "/x", bytes: 1).isEmpty)
     }
 
     @Test func runningAppsBlockAndOpenFilesWarn() async throws {
@@ -62,23 +62,24 @@ struct FerryPreflightTests {
         let dir = try temp.directory("Stuff")
         let running = preflight(StubInspector(usages: [ProcessUsage(pid: 1, name: "Tool", reason: .runningFromHere)]))
         // Temp dirs live under /private/var, so filter to the process rule.
-        let report = await running.check(source: dir, shore: shore())
+        let report = await running.check(source: dir, drive: drive())
         #expect(report.blockers.contains { $0.message.contains("Tool") })
 
         let open = preflight(StubInspector(usages: [ProcessUsage(pid: 1, name: "Editor", reason: .openFile)]))
-        let openReport = await open.check(source: dir, shore: shore())
+        let openReport = await open.check(source: dir, drive: drive())
         #expect(!openReport.blockers.contains { $0.message.contains("Editor") })
         #expect(openReport.warnings.map(\.message).contains { $0.contains("Editor") })
     }
 
-    @Test func refusesNestedAndRepeatFerries() async throws {
+    @Test func refusesNestedAndRepeatOffloads() async throws {
         let temp = try TempDirectory()
         let dir = try temp.directory("Outer/Inner")
-        let record = FerryRecord(
-            id: UUID(), originalPath: dir.path, shore: Shore(volumeUUID: "S", name: "Styx", mountPoint: URL(fileURLWithPath: "/Volumes/Styx")),
-            shoreRelativePath: "Charon/x/Inner", bytes: 1, fileCount: 1, phase: .ferried, startedAt: Date()
+        let record = OffloadRecord(
+            id: UUID(), originalPath: dir.path,
+            drive: OffloadDrive(volumeUUID: "S", name: "Backup", mountPoint: URL(fileURLWithPath: "/Volumes/Backup")),
+            driveRelativePath: "Charon/x/Inner", bytes: 1, fileCount: 1, phase: .offloaded, startedAt: Date()
         )
-        let report = await preflight().check(source: dir.deletingLastPathComponent(), shore: shore(), existing: [record])
-        #expect(!report.canFerry)
+        let report = await preflight().check(source: dir.deletingLastPathComponent(), drive: drive(), existing: [record])
+        #expect(!report.canOffload)
     }
 }

@@ -1,15 +1,15 @@
-// Ferry/FerryError.swift
+// Offload/OffloadError.swift
 // CharonKit
 
 import Foundation
 
-public enum FerryError: LocalizedError, Equatable {
+public enum OffloadError: LocalizedError, Equatable {
     case sourceMissing(String)
     case sourceNotADirectory(String)
-    case shoreUnavailable(String)
+    case driveUnavailable(String)
     case notEnoughSpace(needed: Int64, available: Int64)
     case verificationFailed(path: String, reason: String)
-    case changedDuringFerry(String)
+    case changedDuringOffload(String)
     case brokenLink(String)
     case recordNotFound
     case recordBusy
@@ -22,18 +22,18 @@ public enum FerryError: LocalizedError, Equatable {
             return "\(path) no longer exists."
         case .sourceNotADirectory(let path):
             return "\(path) is not a directory."
-        case .shoreUnavailable(let name):
+        case .driveUnavailable(let name):
             return "\(name) isn't connected."
         case .notEnoughSpace(let needed, let available):
             return "Needs \(ByteSize.format(needed)) but only \(ByteSize.format(available)) is free."
         case .verificationFailed(let path, let reason):
             return "Verification failed at \(path): \(reason). Nothing was removed."
-        case .changedDuringFerry(let path):
-            return "\(path) changed while it was being ferried. Nothing was removed; try again once it's idle."
+        case .changedDuringOffload(let path):
+            return "\(path) changed while it was being offloaded. Nothing was removed; try again once it's idle."
         case .brokenLink(let reason):
             return reason
         case .recordNotFound:
-            return "That ferry record no longer exists."
+            return "That offload record no longer exists."
         case .recordBusy:
             return "That directory is already being moved."
         case .blocked(let reasons):
@@ -62,7 +62,7 @@ final class CancellationFlag: @unchecked Sendable {
     }
 
     func check() throws {
-        if isCancelled { throw FerryError.cancelled }
+        if isCancelled { throw OffloadError.cancelled }
     }
 }
 

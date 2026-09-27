@@ -11,7 +11,7 @@ import Observation
 @Observable
 final class VolumesViewModel {
     private(set) var volumes: [VolumeInfo] = []
-    /// Called after a mount/unmount so ferry statuses can refresh.
+    /// Called after a mount/unmount so offload statuses can refresh.
     @ObservationIgnored var onChange: (() -> Void)?
 
     private let catalog = VolumeCatalog()
@@ -31,7 +31,7 @@ final class VolumesViewModel {
     }
 
     var bootVolume: VolumeInfo? { volumes.first(where: \.isBoot) }
-    var shoreCandidates: [VolumeInfo] { volumes.filter(\.canBeShore) }
+    var driveCandidates: [VolumeInfo] { volumes.filter(\.canBeOffloadDrive) }
 
     func volume(_ id: String?) -> VolumeInfo? {
         guard let id else { return nil }

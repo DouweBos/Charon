@@ -24,14 +24,14 @@ struct AppNavigatorTests {
         let navigator = AppNavigator()
         navigator.focus("/a")
         navigator.goBack()
-        navigator.selectTab(.ferry)
+        navigator.selectTab(.offload)
         #expect(!navigator.canGoForward)
-        #expect(navigator.tab == .ferry)
+        #expect(navigator.tab == .offload)
     }
 
     @Test func focusingFromAnotherTabReturnsToAnalyze() {
         let navigator = AppNavigator()
-        navigator.selectTab(.ferry)
+        navigator.selectTab(.offload)
         navigator.focus("/Users")
         #expect(navigator.tab == .analyze)
         #expect(navigator.targetID == nil)

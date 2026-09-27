@@ -12,7 +12,7 @@ struct SettingsView: View {
     @AppStorage(AppSettings.rememberScans) private var rememberScans = true
     @AppStorage(AppSettings.treemapDepth) private var treemapDepth = 2
     @AppStorage(AppSettings.showStats) private var showStats = true
-    @AppStorage(AppSettings.shoreFolder) private var shoreFolder = "Charon"
+    @AppStorage(AppSettings.driveFolder) private var driveFolder = "Charon"
 
     var body: some View {
         Form {
@@ -33,9 +33,9 @@ struct SettingsView: View {
                 }
                 Toggle("Show live stats", isOn: $showStats)
             }
-            Section("Ferry") {
-                TextField("Folder on the Other Shore", text: $shoreFolder)
-                Text("New ferries go to this folder at the root of the drive. Takes effect after relaunch.")
+            Section("Offload") {
+                TextField("Folder on the external drive", text: $driveFolder)
+                Text("New offloads go to this folder at the root of the drive. Takes effect after relaunch.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Permissions") {

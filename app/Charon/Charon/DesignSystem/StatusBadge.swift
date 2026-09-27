@@ -31,8 +31,8 @@ struct StatusBadge: View {
 
 #Preview {
     VStack(alignment: .leading) {
-        StatusBadge(title: "Ferried", symbol: "checkmark.circle.fill", tone: .positive)
-        StatusBadge(title: "Stranded", symbol: "exclamationmark.triangle.fill", tone: .caution)
+        StatusBadge(title: "Offloaded", symbol: "checkmark.circle.fill", tone: .positive)
+        StatusBadge(title: "Disconnected", symbol: "exclamationmark.triangle.fill", tone: .caution)
         StatusBadge(title: "Broken", symbol: "xmark.octagon.fill", tone: .negative)
         StatusBadge(title: "Copying", symbol: "arrow.triangle.2.circlepath", tone: .neutral)
     }

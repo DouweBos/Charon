@@ -1,49 +1,49 @@
-// Views/Ferry/FerryView.swift
+// Views/Offload/OffloadView.swift
 // Charon
 //
-// Everything on the other shore: Obols reclaimed, the chosen drive, and every ferried directory's status.
+// Offloaded folders: space freed, the chosen drive, and every offloaded directory's status.
 
 import CharonKit
 import SwiftUI
 
-struct FerryView: View {
+struct OffloadView: View {
     @Environment(AppModel.self) private var model
-    @Environment(FerryViewModel.self) private var ferry
+    @Environment(OffloadViewModel.self) private var offload
     @Environment(VolumesViewModel.self) private var volumes
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
             HStack(alignment: .top, spacing: Theme.Spacing.lg) {
                 obolCard
-                ShoreCard()
+                DriveCard()
             }
             .fixedSize(horizontal: false, vertical: true)
 
-            if let operation = ferry.operation {
+            if let operation = offload.operation {
                 ProgressStrip(
                     title: operationTitle(operation),
                     detail: operation.progress.map { "\(ByteSize.format($0.bytesDone)) of \(ByteSize.format($0.bytesTotal))" } ?? "Preparing…",
                     fraction: operation.progress?.fraction,
-                    onCancel: { ferry.cancelOperation() }
+                    onCancel: { offload.cancelOperation() }
                 )
                 .card()
             }
 
             HStack {
-                Text("Ferried").font(.system(size: 15, weight: .semibold))
+                Text("Offloaded").font(.system(size: 15, weight: .semibold))
                 Spacer()
-                Button("Ferry a Folder…", systemImage: "ferry") {
-                    if let url = SystemIntegration.chooseDirectory(message: "Choose a folder to ferry to the Other Shore.") {
-                        model.requestFerry(path: url.path, knownBytes: nil)
+                Button("Offload a Folder…", systemImage: "externaldrive.badge.plus") {
+                    if let url = SystemIntegration.chooseDirectory(message: "Choose a folder to offload to the external drive.") {
+                        model.requestOffload(path: url.path, knownBytes: nil)
                     }
                 }
             }
 
-            if ferry.records.isEmpty {
+            if offload.records.isEmpty {
                 ContentUnavailableView(
                     "Nothing has crossed yet", systemImage: "water.waves",
                     description: Text(
-                        "Right-click a folder in Analyze and choose Ferry to Other Shore. "
+                        "Right-click a folder in Analyze and choose Move to External Drive. "
                             + "Charon copies it, verifies every byte, and leaves a symlink behind."
                     )
                 )
@@ -51,8 +51,8 @@ struct FerryView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: Theme.Spacing.sm) {
-                        ForEach(ferry.records) { record in
-                            FerryRecordRow(record: record, status: ferry.status(of: record))
+                        ForEach(offload.records) { record in
+                            OffloadRecordRow(record: record, status: offload.status(of: record))
                         }
                     }
                 }
@@ -60,74 +60,74 @@ struct FerryView: View {
         }
         .padding(.horizontal, Theme.Spacing.xl)
         .padding(.bottom, Theme.Spacing.xl)
-        .task { await ferry.refresh() }
+        .task { await offload.refresh() }
     }
 
     private var obolCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            Label("Obols", systemImage: "centsign.circle.fill")
+            Label("Space freed", systemImage: "arrow.down.circle.fill")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Theme.accent)
             HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.sm) {
-                Text(ByteSize.format(ferry.obols)).font(.statValue)
+                Text(ByteSize.format(offload.freedBytes)).font(.statValue)
                 Text("reclaimed").font(.statUnit).foregroundStyle(Theme.textSecondary)
             }
             Text(summary)
                 .font(.monoCaption)
-                .foregroundStyle(ferry.strandedCount > 0 ? Theme.warning : Theme.textSecondary)
+                .foregroundStyle(offload.disconnectedCount > 0 ? Theme.warning : Theme.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .card()
     }
 
     private var summary: String {
-        let count = ferry.records.count
-        let base = "\(count) \(count == 1 ? "directory" : "directories") across the Styx"
-        return ferry.strandedCount > 0 ? base + " · \(ferry.strandedCount) stranded" : base
+        let count = offload.records.count
+        let base = "\(count) \(count == 1 ? "directory" : "directories") on external drives"
+        return offload.disconnectedCount > 0 ? base + " · \(offload.disconnectedCount) disconnected" : base
     }
 
-    private func operationTitle(_ operation: FerryOperation) -> String {
+    private func operationTitle(_ operation: OffloadOperation) -> String {
         let stage = operation.progress?.stage.rawValue.capitalized ?? "Starting"
         switch operation.kind {
-        case .ferry: return "Ferrying \(operation.name) · \(stage)"
-        case .bringHome: return "Bringing \(operation.name) home · \(stage)"
+        case .offload: return "Offloading \(operation.name) · \(stage)"
+        case .moveBack: return "Moving \(operation.name) back · \(stage)"
         }
     }
 }
 
-struct ShoreCard: View {
-    @Environment(FerryViewModel.self) private var ferry
+struct DriveCard: View {
+    @Environment(OffloadViewModel.self) private var offload
     @Environment(VolumesViewModel.self) private var volumes
 
-    private var shore: VolumeInfo? { volumes.volume(ferry.shoreVolumeID) }
+    private var drive: VolumeInfo? { volumes.volume(offload.driveVolumeID) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            Label("Other Shore", systemImage: "externaldrive.fill")
+            Label("External Drive", systemImage: "externaldrive.fill")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Theme.statDisk)
             Menu {
-                ForEach(volumes.shoreCandidates) { volume in
-                    Button("\(volume.name) · \(ByteSize.format(volume.availableBytes)) free") { ferry.selectShore(volume.id) }
+                ForEach(volumes.driveCandidates) { volume in
+                    Button("\(volume.name) · \(ByteSize.format(volume.availableBytes)) free") { offload.selectDrive(volume.id) }
                 }
-                if volumes.shoreCandidates.isEmpty {
+                if volumes.driveCandidates.isEmpty {
                     Text("Connect an external drive")
                 }
             } label: {
-                Text(shore?.name ?? (ferry.shoreVolumeID == nil ? "Choose a drive" : "Not connected"))
+                Text(drive?.name ?? (offload.driveVolumeID == nil ? "Choose a drive" : "Not connected"))
                     .font(.system(size: 22, weight: .medium, design: .rounded))
             }
             .menuStyle(.button)
             .buttonStyle(.plain)
             .fixedSize()
-            if let shore {
-                UsageBar(used: shore.usedBytes, total: shore.totalBytes, width: 110)
-                if !shore.preservesMetadata {
-                    Text("\(shore.fileSystem.uppercased()) drops permissions; APFS is recommended.")
+            if let drive {
+                UsageBar(used: drive.usedBytes, total: drive.totalBytes, width: 110)
+                if !drive.preservesMetadata {
+                    Text("\(drive.fileSystem.uppercased()) drops permissions; APFS is recommended.")
                         .font(.monoCaption).foregroundStyle(Theme.warning)
                 }
             } else {
-                Text(volumes.shoreCandidates.isEmpty ? "Plug in an external drive." : "Pick where ferried folders go.")
+                Text(volumes.driveCandidates.isEmpty ? "Plug in an external drive." : "Pick where offloaded folders go.")
                     .font(.monoCaption).foregroundStyle(Theme.textSecondary)
             }
         }

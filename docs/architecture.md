@@ -12,7 +12,7 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 |---|---|
 | `Scanner/` | `DiskScanner` (worker threads + `WorkQueue`), `BulkDirectoryReader` (`getattrlistbulk`), `DiskTree` (struct-of-arrays snapshot), `ScanArchive` |
 | `Treemap/` | `SquarifiedLayout` (pure), `TreemapLayout` (nested tiles, hit-testing, shared level entries) |
-| `Ferry/` | `FerryPreflight`, `Ferryman` (+ `Recovery`), `TreeCopier`, `TreeVerifier`, `ManifestStore`, `FerryStatus`, `ProcessInspector` |
+| `Offload/` | `OffloadPreflight`, `OffloadEngine` (+ `Recovery`), `TreeCopier`, `TreeVerifier`, `ManifestStore`, `OffloadStatus`, `ProcessInspector` |
 | `Volumes/` | `VolumeCatalog`, `VolumeInfo`, `VolumeResolving`, `APFSInspector` (hidden space from `diskutil apfs list` and `tmutil`) |
 | `Cleanup/` | `TrashPolicy` (what may be trashed), `CollectorSet` |
 | `Stats/` | `SystemSampler` |
@@ -33,8 +33,8 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 |---|---|
 | `App/` | `CharonApp`, `AppModel` (owns and wires everything), `CharonCommands` |
 | `Navigation/` | `AppNavigator`: tab, volume, focus path, selection, history |
-| `ViewModels/` | `AnalyzeViewModel`, `FerryViewModel`, `VolumesViewModel`, `StatsViewModel` |
-| `Views/` | `Root/`, `Analyze/`, `Ferry/`, `Stats/`, `Settings/` |
+| `ViewModels/` | `AnalyzeViewModel`, `OffloadViewModel`, `VolumesViewModel`, `StatsViewModel` |
+| `Views/` | `Root/`, `Analyze/`, `Offload/`, `Stats/`, `Settings/` |
 | `DesignSystem/` | `Theme` tokens and reusable components, each with a `#Preview` |
 | `Utilities/` | `AppSettings`, `SystemIntegration` (Finder, Full Disk Access), logging |
 
@@ -42,4 +42,4 @@ Colors live in `Assets.xcassets` with light and dark variants and are only refer
 
 ## Permissions
 
-Not sandboxed: the scanner reads the whole disk and Ferry creates symlinks anywhere in the user's space. Hardened runtime is on. Full Disk Access is detected by probing TCC-protected files. There is no privileged helper, so root-owned paths can't be ferried.
+Not sandboxed: the scanner reads the whole disk and Offload creates symlinks anywhere in the user's space. Hardened runtime is on. Full Disk Access is detected by probing TCC-protected files. There is no privileged helper, so root-owned paths can't be offloaded.

@@ -109,7 +109,7 @@ struct TreemapView: View {
     }
 
     private func caption(_ tile: TreemapTile?) -> String {
-        guard let tile else { return "Click a folder to open it. Right-click to ferry it." }
+        guard let tile else { return "Click a folder to open it. Right-click for more, like moving it to an external drive." }
         switch tile.content {
         case .node(let node):
             let items = tree.isDirectory(node) ? " · \(tree.itemCount(node).formatted()) items" : ""

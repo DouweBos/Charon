@@ -1,30 +1,30 @@
-// Ferry/FerryRecord.swift
+// Offload/OffloadRecord.swift
 // CharonKit
 //
-// One ferried directory in the manifest. The phase is the journal: it's saved before each step so an
+// One offloaded directory in the manifest. The phase is the journal: it's saved before each step so an
 // interrupted operation can be resumed or rolled back.
 
 import Foundation
 
-public enum FerryPhase: String, Codable, Sendable, Hashable {
+public enum OffloadPhase: String, Codable, Sendable, Hashable {
     case copying
     case verifying
     case swapping
     case cleaning
-    case ferried
+    case offloaded
     case returnCopying
     case returnVerifying
     case returnSwapping
     case returnCleaning
 
-    public var isAtRest: Bool { self == .ferried }
+    public var isAtRest: Bool { self == .offloaded }
     public var isReturning: Bool {
         [.returnCopying, .returnVerifying, .returnSwapping, .returnCleaning].contains(self)
     }
 }
 
-/// The drive a record lives on. Identified by volume UUID because mount paths change ("Shore" → "Shore 1").
-public struct Shore: Codable, Sendable, Hashable {
+/// The drive a record lives on. Identified by volume UUID because mount paths change ("Backup" → "Backup 1").
+public struct OffloadDrive: Codable, Sendable, Hashable {
     public var volumeUUID: String
     public var name: String
     public var mountPoint: URL
@@ -41,16 +41,16 @@ public struct Shore: Codable, Sendable, Hashable {
     }
 }
 
-public struct FerryRecord: Codable, Sendable, Hashable, Identifiable {
+public struct OffloadRecord: Codable, Sendable, Hashable, Identifiable {
     public var id: UUID
     /// Where the directory lived and where the symlink now is.
     public var originalPath: String
-    public var shore: Shore
-    /// Location of the copy relative to the shore's mount point.
-    public var shoreRelativePath: String
+    public var drive: OffloadDrive
+    /// Location of the copy relative to the drive's mount point.
+    public var driveRelativePath: String
     public var bytes: Int64
     public var fileCount: Int64
-    public var phase: FerryPhase
+    public var phase: OffloadPhase
     public var startedAt: Date
     public var ferriedAt: Date?
     /// SHA-256 over every file's relative path and content digest, recorded at verification.
@@ -60,8 +60,8 @@ public struct FerryRecord: Codable, Sendable, Hashable, Identifiable {
     public var name: String { (originalPath as NSString).lastPathComponent }
     public var originalURL: URL { URL(fileURLWithPath: originalPath) }
 
-    /// The directory on the shore that holds this record's copy (`Charon/<id>`).
-    public var shoreContainerRelativePath: String { (shoreRelativePath as NSString).deletingLastPathComponent }
+    /// The directory on the drive that holds this record's copy (`Charon/<id>`).
+    public var driveContainerRelativePath: String { (driveRelativePath as NSString).deletingLastPathComponent }
 
     var shortID: String { String(id.uuidString.prefix(8)).lowercased() }
 
@@ -70,16 +70,16 @@ public struct FerryRecord: Codable, Sendable, Hashable, Identifiable {
         originalURL.deletingLastPathComponent().appendingPathComponent(".\(name).charon-\(shortID)")
     }
 
-    /// Staging directory on the home disk while bringing a directory home.
+    /// Staging directory on the home disk while moving a directory back.
     var returnStagingURL: URL {
         originalURL.deletingLastPathComponent().appendingPathComponent(".\(name).charon-return-\(shortID)")
     }
 
     func copyURL(mountPoint: URL) -> URL {
-        mountPoint.appendingPathComponent(shoreRelativePath)
+        mountPoint.appendingPathComponent(driveRelativePath)
     }
 
     func containerURL(mountPoint: URL) -> URL {
-        mountPoint.appendingPathComponent(shoreContainerRelativePath)
+        mountPoint.appendingPathComponent(driveContainerRelativePath)
     }
 }

@@ -97,7 +97,7 @@ final class AnalyzeViewModel {
         if scans[volumeID]?.isScanning == true { scans[volumeID]?.phase = .cancelled }
     }
 
-    /// Drops a ferried directory from the tree so the treemap reflects the freed space without a rescan.
+    /// Drops a offloaded directory from the tree so the treemap reflects the freed space without a rescan.
     func detach(displayPath: String) {
         for (volumeID, state) in scans where !state.isScanning {
             guard var tree = state.tree, let node = tree.node(atDisplayPath: displayPath) else { continue }

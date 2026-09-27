@@ -1,4 +1,4 @@
-// Ferry/TreeVerifier.swift
+// Offload/TreeVerifier.swift
 // CharonKit
 //
 // Proves a copy matches its source: same entries, types, sizes, symlink targets, and SHA-256 of every file.
@@ -76,7 +76,7 @@ struct TreeVerifier {
         return Data(hasher.finalize())
     }
 
-    private func mismatch(_ relative: String, _ reason: String) -> FerryError {
+    private func mismatch(_ relative: String, _ reason: String) -> OffloadError {
         .verificationFailed(path: relative.isEmpty ? "/" : relative, reason: reason)
     }
 

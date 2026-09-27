@@ -13,7 +13,7 @@ final class AppModel {
     let navigator = AppNavigator()
     let volumes = VolumesViewModel()
     let analyze = AnalyzeViewModel()
-    let ferry = FerryViewModel()
+    let offload = OffloadViewModel()
     let stats = StatsViewModel()
     let hiddenSpace = HiddenSpaceViewModel()
     let collector = CollectorViewModel()
@@ -23,9 +23,9 @@ final class AppModel {
     init() {
         navigator.setDefaultTarget(volumes.bootVolume?.id)
         volumes.onChange = { [weak self] in self?.volumesChanged() }
-        ferry.onFerried = { [weak self] path in self?.ferried(path) }
+        offload.onFerried = { [weak self] path in self?.offloaded(path) }
         collector.onTrashed = { [weak self] paths in self?.trashed(paths) }
-        Task { await ferry.reconcile() }
+        Task { await offload.reconcile() }
         if !hasFullDiskAccess, !UserDefaults.standard.bool(forKey: AppSettings.accessPromptShown) {
             UserDefaults.standard.set(true, forKey: AppSettings.accessPromptShown)
             navigator.present(.fullDiskAccess)
@@ -48,8 +48,8 @@ final class AppModel {
         currentTarget?.volume ?? volumes.bootVolume
     }
 
-    var shoreVolume: VolumeInfo? {
-        volumes.volume(ferry.shoreVolumeID)
+    var driveVolume: VolumeInfo? {
+        volumes.volume(offload.driveVolumeID)
     }
 
     var currentScan: ScanState? {
@@ -107,8 +107,8 @@ final class AppModel {
         }
     }
 
-    func requestFerry(path: String, knownBytes: Int64?) {
-        ferry.requestFerry(path: path, knownBytes: knownBytes, shore: shoreVolume)
+    func requestOffload(path: String, knownBytes: Int64?) {
+        offload.requestOffload(path: path, knownBytes: knownBytes, drive: driveVolume)
     }
 
     func recheckFullDiskAccess() {
@@ -123,11 +123,11 @@ final class AppModel {
         if navigator.targetID != nil, !targets.contains(where: { $0.id == navigator.targetID }) {
             navigator.setDefaultTarget(volumes.bootVolume?.id)
         }
-        Task { await ferry.reconcile() }
+        Task { await offload.reconcile() }
     }
 
     func collect(path: String, bytes: Int64, isDirectory: Bool) {
-        collector.add(path: path, bytes: bytes, isDirectory: isDirectory, ferriedPaths: Set(ferry.records.map(\.originalPath)))
+        collector.add(path: path, bytes: bytes, isDirectory: isDirectory, ferriedPaths: Set(offload.records.map(\.originalPath)))
     }
 
     private func trashed(_ paths: [String]) {
@@ -135,7 +135,7 @@ final class AppModel {
         volumes.refresh()
     }
 
-    private func ferried(_ path: String) {
+    private func offloaded(_ path: String) {
         analyze.detach(displayPath: path)
         volumes.refresh()
     }

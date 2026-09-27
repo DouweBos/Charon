@@ -9,6 +9,6 @@ All settings are in UserDefaults (`com.houwert.Charon`) and, unless noted, in th
 | `scan.measurePrivateSize` | false | Scanning | Also measure bytes not shared with APFS clones. Roughly doubles scan time; local Time Machine snapshots make it read low. |
 | `treemap.depth` | 2 | Treemap | Nesting levels drawn at once (1–3). |
 | `stats.visible` | true | Treemap | Show the live stat cards under Analyze. |
-| `ferry.shoreFolder` | `Charon` | Ferry | Folder at the root of the Other Shore that holds ferried directories. Takes effect after relaunch. |
-| `ferry.shoreVolumeID` | none | Ferry tab | The chosen Other Shore (volume UUID). Set from the Other Shore card, not the Settings window. |
+| `offload.driveFolder` | `Charon` | Offload | Folder at the root of the external drive that holds offloaded directories. Takes effect after relaunch. |
+| `offload.driveVolumeID` | none | Offload tab | The chosen external drive (volume UUID). Set from the external drive card, not the Settings window. |
 | `scan.recentFolders` | empty | Disk menu | Up to 8 recently scanned folders, listed under Folders in the disk menu. |

@@ -1,8 +1,8 @@
 // Cleanup/TrashPolicy.swift
 // CharonKit
 //
-// What may go to the Trash. Looser than Ferry (anything the user owns inside a normal folder is fine)
-// but never system locations, container roots, or ferried symlinks.
+// What may go to the Trash. Looser than Offload (anything the user owns inside a normal folder is fine)
+// but never system locations, container roots, or offloaded symlinks.
 
 import Foundation
 
@@ -19,14 +19,14 @@ public struct TrashPolicy: Sendable {
 
     /// Nil when `path` may be moved to the Trash, otherwise the reason it can't.
     public func refusal(for path: String) -> String? {
-        let path = FerryPreflight.userFacingPath(path)
+        let path = OffloadPreflight.userFacingPath(path)
         let home = homeDirectory.standardizedFileURL.path
         func within(_ root: String) -> Bool { path == root || path.hasPrefix(root + "/") }
 
-        if FerryPreflight.systemRoots.contains(where: within), !FerryPreflight.systemExceptions.contains(where: within) {
+        if OffloadPreflight.systemRoots.contains(where: within), !OffloadPreflight.systemExceptions.contains(where: within) {
             return "It's a macOS system location."
         }
-        let exact = FerryPreflight.exactRoots + FerryPreflight.homeExactRoots.map { $0.isEmpty ? home : home + "/" + $0 }
+        let exact = OffloadPreflight.exactRoots + OffloadPreflight.homeExactRoots.map { $0.isEmpty ? home : home + "/" + $0 }
         if exact.contains(path) {
             return "This folder must stay. Remove things inside it instead."
         }
@@ -37,7 +37,7 @@ public struct TrashPolicy: Sendable {
             return "It's inside an app. Remove the whole app instead."
         }
         if ferriedPaths.contains(path) || ferriedPaths.contains(where: { path.hasPrefix($0 + "/") }) {
-            return "It's ferried. Bring it home or forget it first."
+            return "It's offloaded. Move it back or forget it first."
         }
         return nil
     }

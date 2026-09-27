@@ -19,7 +19,7 @@ struct CharonApp: App {
                 .environment(model.navigator)
                 .environment(model.volumes)
                 .environment(model.analyze)
-                .environment(model.ferry)
+                .environment(model.offload)
                 .environment(model.stats)
                 .environment(model.collector)
         }

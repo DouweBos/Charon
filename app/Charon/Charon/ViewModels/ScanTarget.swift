@@ -23,7 +23,7 @@ struct ScanTarget: Identifiable, Hashable {
     }
 
     static func folder(_ url: URL, volume: VolumeInfo?) -> ScanTarget {
-        let path = FerryPreflight.userFacingPath(url.standardizedFileURL.path)
+        let path = OffloadPreflight.userFacingPath(url.standardizedFileURL.path)
         return ScanTarget(
             id: "folder:" + path, name: (path as NSString).lastPathComponent, root: URL(fileURLWithPath: path),
             displayRoot: path, volume: volume, isFolder: true

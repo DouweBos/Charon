@@ -1,16 +1,16 @@
 # Charon
 
-macOS disk analyzer built with SwiftUI. Scans the boot disk or any external disk and shows where the space goes, then ferries heavy directories to an external drive, leaving a symlink behind.
+macOS disk analyzer built with SwiftUI. Scans the boot disk or any external disk and shows where the space goes, then offloads heavy directories to an external drive, leaving a symlink behind.
 
 ## Vocabulary
 
-Use these in UI copy and in type/function names where they fit:
+Charon is the app name only. Features use plain names, never mythology:
 
-- **Ferry**: move a directory to an external drive and replace it with a symlink
-- **Other Shore**: the external destination drive
-- **Obol**: space reclaimed by ferrying
-- **Stranded**: a ferried directory whose drive is unmounted (dangling symlink)
-- **Bring home**: restore a ferried directory to its original location
+- **Offload**: move a directory to an external drive and replace it with a symlink (UI: "Move to External Drive")
+- **External drive**: the destination drive
+- **Space freed**: bytes that now live on external drives
+- **Disconnected**: an offloaded directory whose drive is unmounted (dangling symlink)
+- **Move back**: restore an offloaded directory to its original location
 
 ## Development guidelines
 
@@ -21,7 +21,7 @@ Use these in UI copy and in type/function names where they fit:
 
 ## Architecture
 
-- **Engine vs UI**: scanning, treemap layout, and ferry/restore logic live in a local Swift package that never imports SwiftUI or AppKit. That keeps the engine unit-testable headlessly and keeps views thin.
+- **Engine vs UI**: scanning, treemap layout, and offload/restore logic live in a local Swift package that never imports SwiftUI or AppKit. That keeps the engine unit-testable headlessly and keeps views thin.
 - **Navigation state has one owner.** The selected disk and drill-down path live in a single navigation model. Views read it and never mirror it into their own `@State`. A tab, drill-down, or selection that changes what a panel shows goes through that model, so back/forward works for free.
 
 ## Layout
@@ -29,10 +29,10 @@ Use these in UI copy and in type/function names where they fit:
 ```
 app/Charon/
 ├── Charon.xcodeproj            # synchronized folders: new files under Charon/ are picked up automatically
-├── Packages/CharonKit/         # engine package: Scanner/, Treemap/, Ferry/, Volumes/, Stats/, Support/
+├── Packages/CharonKit/         # engine package: Scanner/, Treemap/, Offload/, Cleanup/, Volumes/, Stats/, Support/
 ├── Charon/                     # App/, Navigation/, ViewModels/, Views/, DesignSystem/, Utilities/
 ├── CharonTests/  CharonUITests/
-docs/                           # architecture.md, ferry.md, settings.md
+docs/                           # architecture.md, offload.md, settings.md
 plan/                           # plans
 ```
 
@@ -51,15 +51,15 @@ swiftlint lint --quiet                  # from app/Charon
 
 Agents verify by compiling only (`build`, `swift build --build-tests`, lint). Never launch the app or run tests that touch the filesystem on the development Mac; the user runs them.
 
-## Ferry safety
+## Offload safety
 
-Ferrying moves user data. These rules are non-negotiable:
+Offloading moves user data. These rules are non-negotiable:
 
 1. Copy, verify, then swap in the symlink. Never delete the source before the copy is verified.
-2. Every step is recoverable: an interrupted ferry leaves either the original or a verified copy, never neither.
+2. Every step is recoverable: an interrupted offload leaves either the original or a verified copy, never neither.
 3. Refuse system paths, SIP-protected locations, and anything inside a running app bundle.
-4. Every ferry is recorded in the manifest, which is the source of truth for Stranded detection and Bring home.
-5. Ferry/restore logic ships with tests that cover interruption and the drive disappearing mid-operation.
+4. Every offload is recorded in the manifest, which is the source of truth for disconnected detection and Move back.
+5. Offload/restore logic ships with tests that cover interruption and the drive disappearing mid-operation.
 
 ## Conventions
 
@@ -81,6 +81,6 @@ Ferrying moves user data. These rules are non-negotiable:
 **Commit messages:** Conventional Commits, `type(scope): subject`. One short single-sentence subject, lower case, no trailing period. No body paragraphs, no bullet lists, and no `Co-Authored-By` or any AI attribution.
 
 - Types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `chore`.
-- The scope is the area, not the path (e.g. `scanner`, `treemap`, `ferry`, `ui`). Reuse an existing scope before inventing another.
+- The scope is the area, not the path (e.g. `scanner`, `treemap`, `offload`, `ui`). Reuse an existing scope before inventing another.
 
 **Comments:** explain why, not what, in 1–2 lines. Describe the code as it stands, not its history.

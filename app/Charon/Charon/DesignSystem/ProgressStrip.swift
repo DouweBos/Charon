@@ -1,7 +1,7 @@
 // DesignSystem/ProgressStrip.swift
 // Charon
 //
-// Labeled linear progress with an optional cancel button, for scans and ferries.
+// Labeled linear progress with an optional cancel button, for scans and offloads.
 
 import SwiftUI
 
@@ -36,7 +36,7 @@ struct ProgressStrip: View {
 
 #Preview {
     VStack(spacing: 20) {
-        ProgressStrip(title: "Ferrying Movies", detail: "12.4 GB of 42 GB", fraction: 0.3, onCancel: {})
+        ProgressStrip(title: "Offloading Movies", detail: "12.4 GB of 42 GB", fraction: 0.3, onCancel: {})
         ProgressStrip(title: "Scanning", detail: "1,203,442 files")
     }
     .frame(width: 420)

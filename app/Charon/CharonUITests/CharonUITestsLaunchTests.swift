@@ -14,7 +14,7 @@ final class CharonUITestsLaunchTests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
         XCTAssertTrue(app.buttons["Analyze"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Ferry"].exists)
+        XCTAssertTrue(app.buttons["Offload"].exists)
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"
         attachment.lifetime = .keepAlways

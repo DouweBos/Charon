@@ -62,7 +62,7 @@ struct RestrictedFoldersSheet: View {
     @Environment(AppNavigator.self) private var navigator
 
     private var paths: [String] {
-        (model.currentScan?.progress.unreadablePaths ?? []).map(FerryPreflight.userFacingPath).sorted()
+        (model.currentScan?.progress.unreadablePaths ?? []).map(OffloadPreflight.userFacingPath).sorted()
     }
 
     var body: some View {

@@ -48,7 +48,7 @@ struct PillTabBar<ID: Hashable>: View {
     PillTabBar(
         tabs: [
             PillTab(id: "analyze", title: "Analyze", symbol: "waveform.path.ecg"),
-            PillTab(id: "ferry", title: "Ferry", symbol: "ferry"),
+            PillTab(id: "offload", title: "Offload", symbol: "externaldrive.badge.plus"),
             PillTab(id: "clean", title: "Clean", symbol: "sparkles")
         ],
         selection: selection

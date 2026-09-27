@@ -1,25 +1,25 @@
-// Ferry/Ferryman+Recovery.swift
+// Offload/OffloadEngine+Recovery.swift
 // CharonKit
 //
-// Brings an interrupted record back to rest. Prefers keeping the original: a ferry only rolls forward once
+// Brings an interrupted record back to rest. Prefers keeping the original: an offload only rolls forward once
 // the symlink is in place (which implies the copy was verified).
 
 import Darwin
 import Foundation
 
 public enum RecoveryOutcome: Sendable, Hashable {
-    /// Ferry undone; the original is where it was.
+    /// Offload undone; the original is where it was.
     case rolledBack
-    /// Ferry or return finished.
+    /// Offload or return finished.
     case completed
-    /// Returned to `.ferried` after an aborted bring-home.
+    /// Returned to `.offloaded` after an aborted move back.
     case restoredFerried
-    /// Waiting for the shore to be reconnected to clean up.
-    case waitingForShore
+    /// Waiting for the drive to be reconnected to clean up.
+    case waitingForDrive
     case failed(String)
 }
 
-extension Ferryman {
+extension OffloadEngine {
 
     enum PathState { case directory, symlink, missing, other }
 
@@ -38,13 +38,13 @@ extension Ferryman {
         do {
             switch record.phase {
             case .copying, .verifying:
-                return try rollBackFerry(record)
+                return try rollBackOffload(record)
             case .swapping:
                 return try recoverSwap(record)
             case .cleaning:
                 try removeIfPresent(record.hiddenSourceURL)
-                return try finishFerry(record)
-            case .ferried:
+                return try finishOffload(record)
+            case .offloaded:
                 return .completed
             case .returnCopying, .returnVerifying:
                 try removeIfPresent(record.returnStagingURL)
@@ -62,24 +62,24 @@ extension Ferryman {
         }
     }
 
-    private func recoverSwap(_ record: FerryRecord) throws -> RecoveryOutcome {
+    private func recoverSwap(_ record: OffloadRecord) throws -> RecoveryOutcome {
         let original = Self.pathState(record.originalURL)
         let hidden = Self.pathState(record.hiddenSourceURL)
         switch (original, hidden) {
         case (.symlink, _):
             // The symlink only goes in after the post-rename recheck, so the copy is good.
             try removeIfPresent(record.hiddenSourceURL)
-            return try finishFerry(record)
+            return try finishOffload(record)
         case (.missing, .directory):
             // Renamed but never linked: the recheck may not have run, so trust the original.
             try posixCheck(rename(record.hiddenSourceURL.path, record.originalPath))
-            return try rollBackFerry(record)
+            return try rollBackOffload(record)
         default:
-            return try rollBackFerry(record)
+            return try rollBackOffload(record)
         }
     }
 
-    private func recoverReturnSwap(_ record: FerryRecord) throws -> RecoveryOutcome {
+    private func recoverReturnSwap(_ record: OffloadRecord) throws -> RecoveryOutcome {
         let original = Self.pathState(record.originalURL)
         let staging = Self.pathState(record.returnStagingURL)
         switch (original, staging) {
@@ -95,48 +95,48 @@ extension Ferryman {
         }
     }
 
-    /// Undo a ferry: make sure the original is in place, then drop the partial copy.
-    private func rollBackFerry(_ record: FerryRecord) throws -> RecoveryOutcome {
+    /// Undo an offload: make sure the original is in place, then drop the partial copy.
+    private func rollBackOffload(_ record: OffloadRecord) throws -> RecoveryOutcome {
         if Self.pathState(record.originalURL) == .missing, Self.pathState(record.hiddenSourceURL) == .directory {
             try posixCheck(rename(record.hiddenSourceURL.path, record.originalPath))
         }
-        guard let mount = volumeResolver.mountPoint(forVolumeUUID: record.shore.volumeUUID) else {
+        guard let mount = volumeResolver.mountPoint(forVolumeUUID: record.drive.volumeUUID) else {
             var waiting = record
-            waiting.lastError = "\(record.shore.name) disconnected; its partial copy is removed when it's reconnected."
+            waiting.lastError = "\(record.drive.name) disconnected; its partial copy is removed when it's reconnected."
             update(waiting)
-            return .waitingForShore
+            return .waitingForDrive
         }
         try removeIfPresent(record.containerURL(mountPoint: mount))
         try remove(record)
         return .rolledBack
     }
 
-    private func finishFerry(_ record: FerryRecord) throws -> RecoveryOutcome {
+    private func finishOffload(_ record: OffloadRecord) throws -> RecoveryOutcome {
         var done = record
-        done.phase = .ferried
+        done.phase = .offloaded
         done.ferriedAt = done.ferriedAt ?? Date()
         done.lastError = nil
         try commit(done)
         return .completed
     }
 
-    private func finishReturn(_ record: FerryRecord) throws -> RecoveryOutcome {
+    private func finishReturn(_ record: OffloadRecord) throws -> RecoveryOutcome {
         var cleaning = record
         cleaning.phase = .returnCleaning
-        guard let mount = volumeResolver.mountPoint(forVolumeUUID: record.shore.volumeUUID) else {
-            cleaning.lastError = "Home again. The copy on \(record.shore.name) is removed when it's reconnected."
+        guard let mount = volumeResolver.mountPoint(forVolumeUUID: record.drive.volumeUUID) else {
+            cleaning.lastError = "Home again. The copy on \(record.drive.name) is removed when it's reconnected."
             try commit(cleaning)
-            return .waitingForShore
+            return .waitingForDrive
         }
         try removeIfPresent(record.containerURL(mountPoint: mount))
         try remove(record)
         return .completed
     }
 
-    private func restoreFerried(_ record: FerryRecord) -> RecoveryOutcome {
-        var ferried = record
-        ferried.phase = .ferried
-        update(ferried)
+    private func restoreFerried(_ record: OffloadRecord) -> RecoveryOutcome {
+        var offloaded = record
+        offloaded.phase = .offloaded
+        update(offloaded)
         return .restoredFerried
     }
 

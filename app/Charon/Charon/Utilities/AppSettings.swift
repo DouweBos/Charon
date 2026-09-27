@@ -12,8 +12,8 @@ enum AppSettings {
     static let rememberScans = "scan.rememberResults"
     static let treemapDepth = "treemap.depth"
     static let showStats = "stats.visible"
-    static let shoreVolumeID = "ferry.shoreVolumeID"
-    static let shoreFolder = "ferry.shoreFolder"
+    static let driveVolumeID = "offload.driveVolumeID"
+    static let driveFolder = "offload.driveFolder"
     static let recentFolders = "scan.recentFolders"
     static let accessPromptShown = "onboarding.accessPromptShown"
 
@@ -24,7 +24,7 @@ enum AppSettings {
             rememberScans: true,
             treemapDepth: 2,
             showStats: true,
-            shoreFolder: "Charon"
+            driveFolder: "Charon"
         ])
     }
 
@@ -36,8 +36,8 @@ enum AppSettings {
         )
     }
 
-    static var shoreFolderName: String {
-        let name = UserDefaults.standard.string(forKey: shoreFolder)?.trimmingCharacters(in: .whitespaces) ?? ""
+    static var driveFolderName: String {
+        let name = UserDefaults.standard.string(forKey: driveFolder)?.trimmingCharacters(in: .whitespaces) ?? ""
         return name.isEmpty || name.contains("/") ? "Charon" : name
     }
 }

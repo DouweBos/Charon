@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// Resolves a volume UUID to where it's mounted right now. Injected so ferry tests can simulate unplugging.
+/// Resolves a volume UUID to where it's mounted right now. Injected so offload tests can simulate unplugging.
 public protocol VolumeResolving: Sendable {
     func mountPoint(forVolumeUUID uuid: String) -> URL?
     func volume(containing url: URL) -> VolumeInfo?
@@ -36,7 +36,7 @@ public struct VolumeCatalog: VolumeResolving {
         info(for: URL(fileURLWithPath: "/"))
     }
 
-    /// Includes hidden volumes: a shore mounted without Finder visibility is still the same shore.
+    /// Includes hidden volumes: a drive mounted without Finder visibility is still the same drive.
     public func mountPoint(forVolumeUUID uuid: String) -> URL? {
         let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: [.volumeUUIDStringKey], options: []) ?? []
         return urls.first { (try? $0.resourceValues(forKeys: [.volumeUUIDStringKey]))?.volumeUUIDString == uuid }

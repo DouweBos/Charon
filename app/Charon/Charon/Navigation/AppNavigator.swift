@@ -8,12 +8,12 @@ import Foundation
 import Observation
 
 enum AppTab: String, CaseIterable, Hashable {
-    case analyze, ferry, clean, uninstall, optimize
+    case analyze, offload, clean, uninstall, optimize
 
     var title: String {
         switch self {
         case .analyze: "Analyze"
-        case .ferry: "Ferry"
+        case .offload: "Offload"
         case .clean: "Clean"
         case .uninstall: "Uninstall"
         case .optimize: "Optimize"
@@ -23,7 +23,7 @@ enum AppTab: String, CaseIterable, Hashable {
     var symbol: String {
         switch self {
         case .analyze: "waveform.path.ecg"
-        case .ferry: "ferry"
+        case .offload: "externaldrive.badge.plus"
         case .clean: "sparkles"
         case .uninstall: "trash"
         case .optimize: "leaf"

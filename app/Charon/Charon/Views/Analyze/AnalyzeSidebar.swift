@@ -125,8 +125,8 @@ struct NodeActions: View {
             model.collect(path: path, bytes: size, isDirectory: isDirectory)
         }
         if isDirectory {
-            Button("Ferry to Other Shore…", systemImage: "ferry") {
-                model.requestFerry(path: path, knownBytes: size)
+            Button("Move to External Drive…", systemImage: "externaldrive.badge.plus") {
+                model.requestOffload(path: path, knownBytes: size)
             }
         }
     }

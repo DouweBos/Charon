@@ -1,7 +1,7 @@
-// Ferry/FerryPreflight.swift
+// Offload/OffloadPreflight.swift
 // CharonKit
 //
-// Decides whether a directory may be ferried. Blockers stop the ferry; warnings need the user's consent.
+// Decides whether a directory may be offloaded. Blockers stop the offload; warnings need the user's consent.
 
 import Darwin
 import Foundation
@@ -21,10 +21,10 @@ public struct PreflightReport: Sendable, Hashable {
 
     public var blockers: [PreflightIssue] { issues.filter { $0.severity == .blocker } }
     public var warnings: [PreflightIssue] { issues.filter { $0.severity == .warning } }
-    public var canFerry: Bool { blockers.isEmpty }
+    public var canOffload: Bool { blockers.isEmpty }
 }
 
-public struct FerryPreflight: Sendable {
+public struct OffloadPreflight: Sendable {
     public var homeDirectory: URL
     public var resolver: any VolumeResolving
     public var inspector: any ProcessInspecting
@@ -46,7 +46,7 @@ public struct FerryPreflight: Sendable {
         "/Library/LaunchAgents", "/Library/LaunchDaemons", "/Library/Preferences", "/Library/Security"
     ]
     static let systemExceptions = ["/usr/local"]
-    /// Containers that must stay real directories, though their children may be ferried.
+    /// Containers that must stay real directories, though their children may be offloaded.
     static let exactRoots = ["/", "/Applications", "/Library", "/Users", "/opt", "/usr/local", "/opt/homebrew"]
 
     /// Home-relative locations apps or macOS refuse to follow symlinks out of.
@@ -62,7 +62,7 @@ public struct FerryPreflight: Sendable {
     private static let restrictedFlag: UInt32 = 0x0008_0000
 
     public func check(
-        source: URL, shore: VolumeInfo?, bytes knownBytes: Int64? = nil, existing: [FerryRecord] = []
+        source: URL, drive: VolumeInfo?, bytes knownBytes: Int64? = nil, existing: [OffloadRecord] = []
     ) async -> PreflightReport {
         let path = Self.userFacingPath(source.standardizedFileURL.path)
         var issues: [PreflightIssue] = []
@@ -74,7 +74,7 @@ public struct FerryPreflight: Sendable {
             return PreflightReport(source: source, bytes: 0, issues: [PreflightIssue(severity: .blocker, message: "It no longer exists.")])
         }
         if info.st_mode & S_IFMT == S_IFLNK { block("It's already a symlink.") }
-        if info.st_mode & S_IFMT != S_IFDIR { block("Only directories can be ferried.") }
+        if info.st_mode & S_IFMT != S_IFDIR { block("Only directories can be offloaded.") }
 
         issues += pathRules(path).map { PreflightIssue(severity: $0.0, message: $0.1) }
 
@@ -97,24 +97,24 @@ public struct FerryPreflight: Sendable {
         }
         let open = usages.filter { $0.reason != .runningFromHere }
         if !open.isEmpty {
-            warn("\(Self.names(open)) has files open in here. Quit it before ferrying, or changes may be lost.")
+            warn("\(Self.names(open)) has files open in here. Quit it before offloading, or changes may be lost.")
         }
 
         let bytes: Int64
-        if let knownBytes { bytes = knownBytes } else { bytes = (try? Ferryman.measure(URL(fileURLWithPath: path)).bytes) ?? 0 }
-        issues += shoreRules(shore: shore, sourcePath: path, bytes: bytes)
+        if let knownBytes { bytes = knownBytes } else { bytes = (try? OffloadEngine.measure(URL(fileURLWithPath: path)).bytes) ?? 0 }
+        issues += driveRules(drive: drive, sourcePath: path, bytes: bytes)
 
         return PreflightReport(source: URL(fileURLWithPath: path), bytes: bytes, issues: issues)
     }
 
-    static func overlap(_ path: String, with record: FerryRecord) -> PreflightIssue? {
+    static func overlap(_ path: String, with record: OffloadRecord) -> PreflightIssue? {
         let message: String
         if record.originalPath == path {
-            message = "It's already ferried."
+            message = "It's already offloaded."
         } else if path.hasPrefix(record.originalPath + "/") {
-            message = "It's inside \(record.name), which is already ferried."
+            message = "It's inside \(record.name), which is already offloaded."
         } else if record.originalPath.hasPrefix(path + "/") {
-            message = "It contains \(record.name), which is already ferried. Bring that home first."
+            message = "It contains \(record.name), which is already offloaded. Move that back first."
         } else {
             return nil
         }
@@ -130,7 +130,7 @@ public struct FerryPreflight: Sendable {
             rules.append((.blocker, "It's a macOS system location."))
         }
         if Self.exactRoots.contains(path) || Self.homeExactRoots.map({ Self.join(home, $0) }).contains(path) {
-            rules.append((.blocker, "This folder must stay a real directory. Ferry something inside it instead."))
+            rules.append((.blocker, "This folder must stay a real directory. Offload something inside it instead."))
         }
         if Self.homeRoots.map({ Self.join(home, $0) }).contains(where: within) {
             rules.append((.blocker, "macOS or sandboxed apps won't follow a symlink here."))
@@ -139,10 +139,10 @@ public struct FerryPreflight: Sendable {
         if components.dropLast().contains(where: { Self.isBundle($0) }) {
             rules.append((.blocker, "It's inside an app or bundle, which would break its code signature."))
         } else if let last = components.last, Self.isBundle(last) {
-            rules.append((.blocker, "App bundles can't be ferried; macOS won't launch them through a symlink reliably."))
+            rules.append((.blocker, "App bundles can't be offloaded; macOS won't launch them through a symlink reliably."))
         }
         if within(Self.join(home, "Library")), rules.isEmpty {
-            rules.append((.warning, "Apps store live data in Library. Quit the app that owns it before ferrying."))
+            rules.append((.warning, "Apps store live data in Library. Quit the app that owns it before offloading."))
         }
         if within("/opt/homebrew") || within("/usr/local") {
             rules.append((.warning, "Package managers may relink or rewrite this; updates can break the symlink."))
@@ -150,29 +150,29 @@ public struct FerryPreflight: Sendable {
         return rules
     }
 
-    func shoreRules(shore: VolumeInfo?, sourcePath: String, bytes: Int64) -> [PreflightIssue] {
-        guard let shore else { return [PreflightIssue(severity: .blocker, message: "Choose an Other Shore first.")] }
+    func driveRules(drive: VolumeInfo?, sourcePath: String, bytes: Int64) -> [PreflightIssue] {
+        guard let drive else { return [PreflightIssue(severity: .blocker, message: "Choose an External Drive first.")] }
         var issues: [PreflightIssue] = []
-        if !shore.canBeShore {
-            issues.append(PreflightIssue(severity: .blocker, message: "\(shore.name) can't be an Other Shore."))
+        if !drive.canBeOffloadDrive {
+            issues.append(PreflightIssue(severity: .blocker, message: "\(drive.name) can't be an External Drive."))
         }
-        if let sourceVolume = resolver.volume(containing: URL(fileURLWithPath: sourcePath)), sourceVolume.id == shore.id {
-            issues.append(PreflightIssue(severity: .blocker, message: "It's already on \(shore.name)."))
+        if let sourceVolume = resolver.volume(containing: URL(fileURLWithPath: sourcePath)), sourceVolume.id == drive.id {
+            issues.append(PreflightIssue(severity: .blocker, message: "It's already on \(drive.name)."))
         }
-        if shore.uuid == nil {
-            issues.append(PreflightIssue(severity: .blocker, message: "\(shore.name) has no volume UUID, so it can't be tracked."))
+        if drive.uuid == nil {
+            issues.append(PreflightIssue(severity: .blocker, message: "\(drive.name) has no volume UUID, so it can't be tracked."))
         }
         let margin: Int64 = 1_000_000_000
-        if shore.availableBytes < bytes + margin {
+        if drive.availableBytes < bytes + margin {
             issues.append(PreflightIssue(
                 severity: .blocker,
-                message: "\(shore.name) needs \(ByteSize.format(bytes + margin)) free (\(ByteSize.format(shore.availableBytes)) available)."
+                message: "\(drive.name) needs \(ByteSize.format(bytes + margin)) free (\(ByteSize.format(drive.availableBytes)) available)."
             ))
         }
-        if !shore.preservesMetadata {
+        if !drive.preservesMetadata {
             issues.append(PreflightIssue(
                 severity: .warning,
-                message: "\(shore.name) is \(shore.fileSystem.uppercased()), which drops permissions and extended attributes."
+                message: "\(drive.name) is \(drive.fileSystem.uppercased()), which drops permissions and extended attributes."
             ))
         }
         return issues

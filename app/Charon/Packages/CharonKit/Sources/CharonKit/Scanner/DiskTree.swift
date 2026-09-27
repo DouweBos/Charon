@@ -59,7 +59,7 @@ public struct DiskTree: Sendable {
 
     public func name(_ id: NodeID) -> String { names[Int(id)] }
     public func size(_ id: NodeID) -> Int64 { sizes[Int(id)] }
-    /// Bytes not shared with APFS clones: what deleting or ferrying this would actually free.
+    /// Bytes not shared with APFS clones: what deleting or offloading this would actually free.
     public func privateSize(_ id: NodeID) -> Int64 { privateSizes[Int(id)] }
     public func itemCount(_ id: NodeID) -> Int64 { itemCounts[Int(id)] }
     public func kind(_ id: NodeID) -> Kind { kinds[Int(id)] }
@@ -157,7 +157,7 @@ extension DiskTree {
 // MARK: - Editing
 
 extension DiskTree {
-    /// Removes a subtree and subtracts its bytes from its ancestors, e.g. after it was ferried away.
+    /// Removes a subtree and subtracts its bytes from its ancestors, e.g. after it was offloaded away.
     public mutating func detach(_ id: NodeID) {
         guard let parent = parent(id) else { return }
         accumulate(into: parent, size: -sizes[Int(id)], privateSize: -privateSizes[Int(id)], items: -itemCounts[Int(id)])

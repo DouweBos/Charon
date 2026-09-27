@@ -9,7 +9,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(AppNavigator.self) private var navigator
-    @Environment(FerryViewModel.self) private var ferry
+    @Environment(OffloadViewModel.self) private var offload
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,7 +17,7 @@ struct RootView: View {
             Group {
                 switch navigator.tab {
                 case .analyze: AnalyzeView()
-                case .ferry: FerryView()
+                case .offload: OffloadView()
                 case .clean, .uninstall, .optimize: ComingSoonView(tab: navigator.tab)
                 }
             }
@@ -26,8 +26,8 @@ struct RootView: View {
         .background(Theme.background.ignoresSafeArea())
         .foregroundStyle(Theme.textPrimary)
         .frame(minWidth: 960, minHeight: 640)
-        .sheet(item: Binding(get: { ferry.request }, set: { if $0 == nil { ferry.dismissRequest() } })) { _ in
-            FerrySheet()
+        .sheet(item: Binding(get: { offload.request }, set: { if $0 == nil { offload.dismissRequest() } })) { _ in
+            OffloadSheet()
         }
         .sheet(item: Binding(get: { navigator.sheet }, set: { if $0 == nil { navigator.dismissSheet() } })) { sheet in
             switch sheet {
@@ -36,14 +36,14 @@ struct RootView: View {
             case .hiddenSpace: HiddenSpaceSheet()
             }
         }
-        .alert("Charon", isPresented: Binding(get: { ferry.errorMessage != nil }, set: { if !$0 { ferry.dismissError() } })) {
-            Button("OK") { ferry.dismissError() }
+        .alert("Charon", isPresented: Binding(get: { offload.errorMessage != nil }, set: { if !$0 { offload.dismissError() } })) {
+            Button("OK") { offload.dismissError() }
         } message: {
-            Text(ferry.errorMessage ?? "")
+            Text(offload.errorMessage ?? "")
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.recheckFullDiskAccess()
-            Task { await ferry.refresh() }
+            Task { await offload.refresh() }
         }
     }
 }
@@ -90,7 +90,7 @@ struct ComingSoonView: View {
     var body: some View {
         ContentUnavailableView(
             tab.title, systemImage: tab.symbol,
-            description: Text("Not built yet. Analyze and Ferry are where Charon does its work for now.")
+            description: Text("Not built yet. Analyze and Offload are where Charon does its work for now.")
         )
         .foregroundStyle(Theme.textSecondary)
     }

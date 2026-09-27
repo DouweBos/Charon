@@ -1,17 +1,17 @@
-// Views/Ferry/FerrySheet.swift
+// Views/Offload/OffloadSheet.swift
 // Charon
 //
-// Confirm a ferry: preflight blockers and warnings, then progress, then the Obol.
+// Confirm an offload: preflight blockers and warnings, then progress, then the space freed.
 
 import CharonKit
 import SwiftUI
 
-struct FerrySheet: View {
+struct OffloadSheet: View {
     @Environment(AppModel.self) private var model
-    @Environment(FerryViewModel.self) private var ferry
+    @Environment(OffloadViewModel.self) private var offload
 
     var body: some View {
-        if let request = ferry.request {
+        if let request = offload.request {
             VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
                 header(request)
                 content(request)
@@ -24,11 +24,11 @@ struct FerrySheet: View {
         }
     }
 
-    private func header(_ request: FerryRequest) -> some View {
+    private func header(_ request: OffloadRequest) -> some View {
         HStack(spacing: Theme.Spacing.md) {
-            Image(systemName: "ferry.fill").font(.system(size: 28)).foregroundStyle(Theme.accent)
+            Image(systemName: "externaldrive.fill.badge.plus").font(.system(size: 28)).foregroundStyle(Theme.accent)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Ferry \(URL(fileURLWithPath: request.path).lastPathComponent)")
+                Text("Offload \(URL(fileURLWithPath: request.path).lastPathComponent)")
                     .font(.system(size: 18, weight: .semibold))
                 Text(request.path).font(.monoCaption).foregroundStyle(Theme.textSecondary)
                     .lineLimit(1).truncationMode(.middle)
@@ -37,29 +37,29 @@ struct FerrySheet: View {
     }
 
     @ViewBuilder
-    private func content(_ request: FerryRequest) -> some View {
+    private func content(_ request: OffloadRequest) -> some View {
         switch request.stage {
         case .checking:
-            ProgressStrip(title: "Checking whether it's safe to ferry…", detail: "")
+            ProgressStrip(title: "Checking whether it's safe to offload…", detail: "")
         case .review:
             if let report = request.report { review(report, request) }
         case .running:
-            let progress = ferry.operation?.progress
+            let progress = offload.operation?.progress
             ProgressStrip(
                 title: (progress?.stage.rawValue.capitalized ?? "Starting") + "…",
                 detail: progress.map { "\(ByteSize.format($0.bytesDone)) of \(ByteSize.format($0.bytesTotal))" } ?? "",
                 fraction: progress?.fraction,
-                onCancel: { ferry.cancelOperation() }
+                onCancel: { offload.cancelOperation() }
             )
-            Text("The original stays in place until every file on the Other Shore is verified.")
+            Text("The original stays in place until every file on the external drive is verified.")
                 .font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
         case .done(let reclaimed):
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 Label("\(ByteSize.format(reclaimed)) reclaimed", systemImage: "centsign.circle.fill")
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
                     .foregroundStyle(Theme.accent)
-                let shoreName = model.shoreVolume?.name ?? "the Other Shore"
-                Text("It now lives on \(shoreName). The symlink keeps every path working while the drive is connected.")
+                let driveName = model.driveVolume?.name ?? "the external drive"
+                Text("It now lives on \(driveName). The symlink keeps every path working while the drive is connected.")
                     .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
             }
         case .failed(let message):
@@ -67,11 +67,11 @@ struct FerrySheet: View {
         }
     }
 
-    private func review(_ report: PreflightReport, _ request: FerryRequest) -> some View {
+    private func review(_ report: PreflightReport, _ request: OffloadRequest) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             HStack(spacing: Theme.Spacing.xl) {
                 fact("Size", ByteSize.format(report.bytes))
-                fact("Other Shore", model.shoreVolume.map { "\($0.name) · \(ByteSize.format($0.availableBytes)) free" } ?? "None chosen")
+                fact("External Drive", model.driveVolume.map { "\($0.name) · \(ByteSize.format($0.availableBytes)) free" } ?? "None chosen")
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
@@ -86,9 +86,9 @@ struct FerrySheet: View {
                     }
                 }
             }
-            if report.canFerry, !report.warnings.isEmpty {
+            if report.canOffload, !report.warnings.isEmpty {
                 Toggle("I understand the warnings", isOn: Binding(
-                    get: { request.acknowledgedWarnings }, set: { ferry.acknowledgeWarnings($0) }
+                    get: { request.acknowledgedWarnings }, set: { offload.acknowledgeWarnings($0) }
                 ))
             }
         }
@@ -102,25 +102,25 @@ struct FerrySheet: View {
     }
 
     @ViewBuilder
-    private func footer(_ request: FerryRequest) -> some View {
+    private func footer(_ request: OffloadRequest) -> some View {
         HStack {
             Spacer()
             switch request.stage {
             case .checking, .review:
-                Button("Cancel") { ferry.dismissRequest() }.keyboardShortcut(.cancelAction)
-                Button("Ferry") { ferry.confirmFerry(to: model.shoreVolume) }
+                Button("Cancel") { offload.dismissRequest() }.keyboardShortcut(.cancelAction)
+                Button("Offload") { offload.confirmOffload(to: model.driveVolume) }
                     .keyboardShortcut(.defaultAction)
                     .disabled(!canConfirm(request))
             case .running:
-                Button("Stop") { ferry.cancelOperation() }
+                Button("Stop") { offload.cancelOperation() }
             case .done, .failed:
-                Button("Done") { ferry.dismissRequest() }.keyboardShortcut(.defaultAction)
+                Button("Done") { offload.dismissRequest() }.keyboardShortcut(.defaultAction)
             }
         }
     }
 
-    private func canConfirm(_ request: FerryRequest) -> Bool {
-        guard let report = request.report, report.canFerry else { return false }
+    private func canConfirm(_ request: OffloadRequest) -> Bool {
+        guard let report = request.report, report.canOffload else { return false }
         return report.warnings.isEmpty || request.acknowledgedWarnings
     }
 }
