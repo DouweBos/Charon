@@ -44,6 +44,10 @@ public enum OffloadError: LocalizedError, Equatable {
     }
 }
 
+enum CopyReadError: Error {
+    case unreadable(String, String)
+}
+
 /// Set from a cancellation handler, polled by blocking file work.
 final class CancellationFlag: @unchecked Sendable {
     private let lock = NSLock()

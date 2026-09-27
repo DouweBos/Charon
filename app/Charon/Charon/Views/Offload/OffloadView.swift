@@ -86,6 +86,7 @@ struct OffloadView: View {
         switch operation.kind {
         case .offload: return "Offloading \(operation.name) · \(stage)"
         case .moveBack: return "Moving \(operation.name) back · \(stage)"
+        case .check: return "Checking \(operation.name) on the drive"
         }
     }
 }

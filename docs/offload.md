@@ -51,3 +51,7 @@ Space freed is the total bytes of offloaded records. The manifest lives at `~/Li
 ## Suggestions
 
 The Offload tab suggests up to eight folders from the last startup disk scan: folders in your home directory of at least 1 GB, up to four levels deep, that pass every path rule above without warnings. Suggestions never overlap each other or anything already offloaded; the larger folder wins. Logic lives in `OffloadSuggester`.
+
+## Checking a copy
+
+**Check Copy on Drive** (right-click an offloaded folder) reads every byte of the copy back from the drive, bypassing the cache, and compares the tree digest with the one recorded at offload time. It reports intact, readable but changed since the offload (normal after editing through the link), or the first file that can't be read. It never writes.

@@ -38,10 +38,10 @@ struct RootView: View {
             case .hiddenSpace: HiddenSpaceSheet()
             }
         }
-        .alert("Charon", isPresented: Binding(get: { offload.errorMessage != nil }, set: { if !$0 { offload.dismissError() } })) {
-            Button("OK") { offload.dismissError() }
+        .alert("Charon", isPresented: Binding(get: { offload.alertMessage != nil }, set: { if !$0 { offload.dismissAlert() } })) {
+            Button("OK") { offload.dismissAlert() }
         } message: {
-            Text(offload.errorMessage ?? "")
+            Text(offload.alertMessage ?? "")
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.recheckFullDiskAccess()

@@ -9,7 +9,7 @@ import Observation
 import os
 
 struct OffloadOperation: Identifiable {
-    enum Kind { case offload, moveBack }
+    enum Kind { case offload, moveBack, check }
 
     let id = UUID()
     var kind: Kind
@@ -36,7 +36,7 @@ final class OffloadViewModel {
     private(set) var statuses: [UUID: OffloadStatus] = [:]
     private(set) var operation: OffloadOperation?
     private(set) var request: OffloadRequest?
-    private(set) var errorMessage: String?
+    private(set) var alertMessage: String?
     private(set) var driveVolumeID: String? = UserDefaults.standard.string(forKey: AppSettings.driveVolumeID)
 
     /// Called with the original path after a successful offload.
@@ -95,15 +95,15 @@ final class OffloadViewModel {
         UserDefaults.standard.set(volumeID, forKey: AppSettings.driveVolumeID)
     }
 
-    func dismissError() {
-        errorMessage = nil
+    func dismissAlert() {
+        alertMessage = nil
     }
 
     // MARK: - Offload
 
     func requestOffload(path: String, knownBytes: Int64?, drive: VolumeInfo?) {
         guard operation == nil else {
-            errorMessage = "Wait for the current crossing to finish."
+            alertMessage = "Wait for the current crossing to finish."
             return
         }
         let userPath = OffloadPreflight.userFacingPath(path)
@@ -174,7 +174,7 @@ final class OffloadViewModel {
 
     func moveBack(_ record: OffloadRecord) {
         guard operation == nil else {
-            errorMessage = "Wait for the current crossing to finish."
+            alertMessage = "Wait for the current crossing to finish."
             return
         }
         operation = OffloadOperation(kind: .moveBack, name: record.name)
@@ -184,10 +184,36 @@ final class OffloadViewModel {
                 defer { tracker.finish() }
                 try await offloadEngine.moveBack(record.id, progress: tracker.report)
             } catch {
-                errorMessage = error.localizedDescription
+                alertMessage = error.localizedDescription
             }
             operation = nil
             await refresh()
+        }
+    }
+
+    /// Reads every file of the copy back from the drive. Nothing is written.
+    func checkCopy(_ record: OffloadRecord) {
+        guard operation == nil else {
+            alertMessage = "Wait for the current operation to finish."
+            return
+        }
+        operation = OffloadOperation(kind: .check, name: record.name)
+        task = Task {
+            do {
+                let tracker = trackProgress()
+                defer { tracker.finish() }
+                switch try await offloadEngine.checkCopy(record.id, progress: tracker.report) {
+                case .intact:
+                    alertMessage = "\(record.name) on \(record.drive.name) reads back intact."
+                case .changedSinceOffload:
+                    alertMessage = "\(record.name) reads back fine. Its contents changed since it was offloaded, which is expected if you edited it."
+                case .unreadable(let path, let reason):
+                    alertMessage = "\(record.name): \(path) couldn't be read (\(reason)). The drive may be failing; copy what you can."
+                }
+            } catch {
+                alertMessage = error.localizedDescription
+            }
+            operation = nil
         }
     }
 
@@ -196,7 +222,7 @@ final class OffloadViewModel {
             do {
                 try await offloadEngine.relink(record.id)
             } catch {
-                errorMessage = error.localizedDescription
+                alertMessage = error.localizedDescription
             }
             await refresh()
         }

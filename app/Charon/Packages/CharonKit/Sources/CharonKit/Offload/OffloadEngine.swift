@@ -223,6 +223,35 @@ public actor OffloadEngine {
 
     // MARK: - Maintenance
 
+    public enum CopyCheck: Sendable, Hashable {
+        /// Every file read back and matches what was verified at offload time.
+        case intact
+        /// Every file is readable, but contents changed since the offload (edits made through the link).
+        case changedSinceOffload
+        case unreadable(path: String, reason: String)
+    }
+
+    /// Reads every byte of a record's copy on the drive. Read-only.
+    public func checkCopy(
+        _ id: UUID, progress: @escaping @Sendable (OffloadProgress) -> Void = { _ in }
+    ) async throws -> CopyCheck {
+        guard let record = record(id), record.phase == .offloaded else { throw OffloadError.recordNotFound }
+        guard let mount = resolver.mountPoint(forVolumeUUID: record.drive.volumeUUID) else {
+            throw OffloadError.driveUnavailable(record.drive.name)
+        }
+        let copy = record.copyURL(mountPoint: mount)
+        let total = record.bytes
+        do {
+            let digest = try await runBlocking { flag in
+                try TreeVerifier(flag: flag) { progress(OffloadProgress(stage: .verifying, bytesDone: $0 * 2, bytesTotal: total)) }
+                    .digest(of: copy)
+            }
+            return digest == record.treeDigest ? .intact : .changedSinceOffload
+        } catch CopyReadError.unreadable(let path, let reason) {
+            return .unreadable(path: path, reason: reason)
+        }
+    }
+
     public func status(of record: OffloadRecord) -> OffloadStatus {
         OffloadStatus.resolve(record, resolver: resolver)
     }

@@ -36,6 +36,10 @@ struct OffloadRecordRow: View {
         .card(padding: Theme.Spacing.md)
         .contextMenu {
             Button("Reveal in Finder", systemImage: "folder") { SystemIntegration.revealInFinder(record.originalPath) }
+            if status == .offloaded {
+                Button("Check Copy on Drive", systemImage: "checkmark.shield") { offload.checkCopy(record) }
+                    .disabled(offload.operation != nil)
+            }
             if case .broken = status {
                 Button("Forget", systemImage: "minus.circle", role: .destructive) { offload.forget(record) }
             }

@@ -171,4 +171,14 @@ struct OffloadEngineTests {
             #expect(fixture.driveContents.isEmpty)
         }
     }
+
+    @Test func checkCopyReadsBackEveryFile() async throws {
+        let fixture = try OffloadFixture()
+        let engine = fixture.offloadEngine()
+        let record = try await engine.offload(fixture.source, to: fixture.drive)
+        #expect(try await engine.checkCopy(record.id) == .intact)
+
+        try Data("edited".utf8).write(to: fixture.source.appendingPathComponent("nested/b.txt"))
+        #expect(try await engine.checkCopy(record.id) == .changedSinceOffload)
+    }
 }

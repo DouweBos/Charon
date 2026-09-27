@@ -21,6 +21,37 @@ struct TreeVerifier {
         return tree.finalize().hexString
     }
 
+    /// Same digest as `verify`, computed from one tree: reads every byte, so it also proves the copy is readable.
+    func digest(of url: URL) throws -> String {
+        var tree = SHA256()
+        var bytes: Int64 = 0
+        try accumulate(url.path, relative: "", tree: &tree, bytes: &bytes)
+        return tree.finalize().hexString
+    }
+
+    private func accumulate(_ path: String, relative: String, tree: inout SHA256, bytes: inout Int64) throws {
+        try flag.check()
+        var info = stat()
+        try posixCheck(lstat(path, &info))
+        switch info.st_mode & S_IFMT {
+        case S_IFDIR:
+            for name in try Self.entries(path) {
+                try accumulate(path + "/" + name, relative: relative + "/" + name, tree: &tree, bytes: &bytes)
+            }
+        case S_IFREG:
+            let fileDigest: Data
+            do {
+                fileDigest = try hash(path, bypassCache: true, bytes: &bytes)
+            } catch {
+                throw CopyReadError.unreadable(relative.isEmpty ? "/" : relative, error.localizedDescription)
+            }
+            tree.update(data: Data((relative + "\u{0}").utf8))
+            tree.update(data: fileDigest)
+        default:
+            break
+        }
+    }
+
     // swiftlint:disable:next cyclomatic_complexity
     private func compare(_ source: String, _ copy: String, relative: String, tree: inout SHA256, bytes: inout Int64) throws {
         try flag.check()
