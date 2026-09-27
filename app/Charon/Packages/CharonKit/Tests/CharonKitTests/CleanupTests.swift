@@ -72,3 +72,18 @@ struct CleanResolverTests {
         #expect(Set(CleanCatalog.all.map(\.id)).count == CleanCatalog.all.count)
     }
 }
+
+struct CleanMeasurerTests {
+    @Test func measuresChildrenAndSkipsExcludes() async throws {
+        let home = try TempDirectory()
+        try home.file("Library/Caches/com.big/blob", bytes: 400_000)
+        try home.file("Library/Caches/small.db", bytes: 5_000)
+        try home.file("Library/Caches/Homebrew/pkg", bytes: 300_000)
+        let measurer = CleanMeasurer(resolver: CleanResolver(homeDirectory: home.url))
+        let caches = try #require(CleanCatalog.all.first { $0.id == "system.caches" })
+
+        let items = try await measurer.measure(caches)
+        #expect(items.map(\.url.lastPathComponent) == ["com.big", "small.db"])
+        #expect(items[0].bytes >= 400_000)
+    }
+}

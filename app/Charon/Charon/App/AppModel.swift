@@ -17,6 +17,7 @@ final class AppModel {
     let stats = StatsViewModel()
     let hiddenSpace = HiddenSpaceViewModel()
     let collector = CollectorViewModel()
+    let clean = CleanViewModel()
     private(set) var hasFullDiskAccess = SystemIntegration.hasFullDiskAccess
     private(set) var dismissedAccessBanner = false
 
@@ -25,6 +26,7 @@ final class AppModel {
         volumes.onChange = { [weak self] in self?.volumesChanged() }
         offload.onOffloaded = { [weak self] path in self?.offloaded(path) }
         collector.onTrashed = { [weak self] paths in self?.trashed(paths) }
+        clean.onTrashed = { [weak self] paths in self?.trashed(paths) }
         Task { await offload.reconcile() }
         if !hasFullDiskAccess, !UserDefaults.standard.bool(forKey: AppSettings.accessPromptShown) {
             UserDefaults.standard.set(true, forKey: AppSettings.accessPromptShown)

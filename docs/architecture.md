@@ -14,7 +14,7 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 | `Treemap/` | `SquarifiedLayout` (pure), `TreemapLayout` (nested tiles, hit-testing, shared level entries) |
 | `Offload/` | `OffloadPreflight`, `OffloadEngine` (+ `Recovery`), `TreeCopier`, `TreeVerifier`, `ManifestStore`, `OffloadStatus`, `ProcessInspector` |
 | `Volumes/` | `VolumeCatalog`, `VolumeInfo`, `VolumeResolving`, `APFSInspector` (hidden space from `diskutil apfs list` and `tmutil`) |
-| `Cleanup/` | `TrashPolicy` (what may be trashed), `CollectorSet` |
+| `Cleanup/` | `TrashPolicy` (what may be trashed), `CollectorSet`, `CleanCatalog`, `CleanResolver`, `CleanMeasurer` |
 | `Stats/` | `SystemSampler` |
 | `Support/` | `ByteSize` formatting, POSIX helpers |
 

@@ -185,13 +185,16 @@ public struct CleanResolver: Sendable {
         case .itself, .emptyTrash:
             return roots
         case .contents:
-            let excluded = Set(category.excludes.map(expand))
-            return roots.flatMap { root in
-                ((try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []).sorted()
-                    .map { root.appendingPathComponent($0) }
-                    .filter { !excluded.contains($0.path) && $0.lastPathComponent != ".DS_Store" }
-            }
+            return roots.flatMap { contents(of: $0, excludes: category.excludes) }
         }
+    }
+
+    /// Children of `root`, minus excluded paths and Finder metadata.
+    public func contents(of root: URL, excludes: [String]) -> [URL] {
+        let excluded = Set(excludes.map(expand))
+        return ((try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []).sorted()
+            .map { root.appendingPathComponent($0) }
+            .filter { !excluded.contains($0.path) && $0.lastPathComponent != ".DS_Store" }
     }
 
     static func wildcard(_ pattern: String, matches name: String) -> Bool {
