@@ -83,15 +83,24 @@ struct AnalyzeHeader: View {
 
 struct AnalyzeBanners: View {
     @Environment(AppModel.self) private var model
+    @Environment(AppNavigator.self) private var navigator
 
     var body: some View {
         if !model.hasFullDiskAccess, !model.dismissedAccessBanner {
             Banner(
                 symbol: "lock.shield",
                 message: bannerMessage,
-                actionTitle: "Open Settings",
-                action: { SystemIntegration.openFullDiskAccessSettings() },
+                actionTitle: "Grant Access",
+                action: { navigator.present(.fullDiskAccess) },
                 onDismiss: { model.dismissAccessBanner() }
+            )
+        } else if let scan = model.currentScan, !scan.isScanning, scan.progress.unreadableDirectories > 0 {
+            Banner(
+                symbol: "lock",
+                message: "\(scan.progress.unreadableDirectories.formatted()) folders are restricted to macOS or other users;"
+                    + " their space is in System & other.",
+                actionTitle: "Show",
+                action: { navigator.present(.restrictedFolders) }
             )
         }
         if case .failed(let message) = model.currentScan?.phase {

@@ -31,6 +31,14 @@ enum AppTab: String, CaseIterable, Hashable {
     }
 }
 
+/// Modal panels that aren't tied to a ViewModel's own flow.
+enum AppSheet: String, Identifiable {
+    case fullDiskAccess
+    case restrictedFolders
+
+    var id: String { rawValue }
+}
+
 struct NavigationLocation: Hashable {
     var tab: AppTab = .analyze
     var volumeID: String?
@@ -45,6 +53,7 @@ final class AppNavigator {
     private(set) var index = 0
     /// Highlighted item (hover-independent), shared by sidebar and treemap.
     private(set) var selectedPath: String?
+    private(set) var sheet: AppSheet?
 
     init() {
         history = [NavigationLocation()]
@@ -84,6 +93,14 @@ final class AppNavigator {
 
     func select(_ path: String?) {
         selectedPath = path
+    }
+
+    func present(_ sheet: AppSheet) {
+        self.sheet = sheet
+    }
+
+    func dismissSheet() {
+        sheet = nil
     }
 
     func goBack() {

@@ -29,6 +29,12 @@ struct RootView: View {
         .sheet(item: Binding(get: { ferry.request }, set: { if $0 == nil { ferry.dismissRequest() } })) { _ in
             FerrySheet()
         }
+        .sheet(item: Binding(get: { navigator.sheet }, set: { if $0 == nil { navigator.dismissSheet() } })) { sheet in
+            switch sheet {
+            case .fullDiskAccess: FullDiskAccessSheet()
+            case .restrictedFolders: RestrictedFoldersSheet()
+            }
+        }
         .alert("Charon", isPresented: Binding(get: { ferry.errorMessage != nil }, set: { if !$0 { ferry.dismissError() } })) {
             Button("OK") { ferry.dismissError() }
         } message: {

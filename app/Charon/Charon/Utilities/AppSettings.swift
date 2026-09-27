@@ -14,6 +14,7 @@ enum AppSettings {
     static let showStats = "stats.visible"
     static let shoreVolumeID = "ferry.shoreVolumeID"
     static let shoreFolder = "ferry.shoreFolder"
+    static let accessPromptShown = "onboarding.accessPromptShown"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [

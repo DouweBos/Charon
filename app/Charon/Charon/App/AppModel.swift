@@ -23,6 +23,10 @@ final class AppModel {
         volumes.onChange = { [weak self] in self?.volumesChanged() }
         ferry.onFerried = { [weak self] path in self?.ferried(path) }
         Task { await ferry.reconcile() }
+        if !hasFullDiskAccess, !UserDefaults.standard.bool(forKey: AppSettings.accessPromptShown) {
+            UserDefaults.standard.set(true, forKey: AppSettings.accessPromptShown)
+            navigator.present(.fullDiskAccess)
+        }
     }
 
     var currentVolume: VolumeInfo? {
