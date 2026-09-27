@@ -94,6 +94,10 @@ struct TreemapView: View {
     }
 
     private func open(_ tile: TreemapTile) {
+        if tile.content == .unaccounted {
+            navigator.present(.hiddenSpace)
+            return
+        }
         guard let node = tile.node else { return }
         if tree.isDirectory(node), !tree.children(node).isEmpty {
             navigator.focus(tree.displayPath(node))
@@ -110,7 +114,7 @@ struct TreemapView: View {
             return "\(tree.displayPath(node)) · \(ByteSize.format(tile.size))\(items)"
         case .looseFiles: return "Files directly in this folder · \(ByteSize.format(tile.size))"
         case .others(_, let count): return "\(count) smaller items · \(ByteSize.format(tile.size))"
-        case .unaccounted: return "macOS, snapshots, purgeable and other space the scan can't see · \(ByteSize.format(tile.size))"
+        case .unaccounted: return "macOS, snapshots and space the scan can't see · \(ByteSize.format(tile.size)) · click for a breakdown"
         }
     }
 

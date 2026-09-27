@@ -57,9 +57,10 @@ public struct VolumeCatalog: VolumeResolving {
         let isBoot = values.volumeIsRootFileSystem ?? (url.path == "/")
         let total = Int64(values.volumeTotalCapacity ?? 0)
         let important = values.volumeAvailableCapacityForImportantUsage ?? 0
-        let available = important > 0 ? important : Int64(values.volumeAvailableCapacity ?? 0)
+        let plainAvailable = Int64(values.volumeAvailableCapacity ?? 0)
+        let available = important > 0 ? important : plainAvailable
         let name = values.volumeLocalizedName ?? values.volumeName ?? url.lastPathComponent
-        return VolumeInfo(
+        var volume = VolumeInfo(
             id: values.volumeUUIDString ?? url.path,
             name: name,
             mountPoint: url,
@@ -72,6 +73,8 @@ public struct VolumeCatalog: VolumeResolving {
             isEjectable: (values.volumeIsEjectable ?? false) || (values.volumeIsRemovable ?? false),
             isReadOnly: isBoot ? false : (values.volumeIsReadOnly ?? false)
         )
+        volume.purgeableBytes = max(available - plainAvailable, 0)
+        return volume
     }
 
     static func fileSystemType(at url: URL) -> String? {

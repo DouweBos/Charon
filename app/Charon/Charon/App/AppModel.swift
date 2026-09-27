@@ -15,6 +15,7 @@ final class AppModel {
     let analyze = AnalyzeViewModel()
     let ferry = FerryViewModel()
     let stats = StatsViewModel()
+    let hiddenSpace = HiddenSpaceViewModel()
     private(set) var hasFullDiskAccess = SystemIntegration.hasFullDiskAccess
     private(set) var dismissedAccessBanner = false
 

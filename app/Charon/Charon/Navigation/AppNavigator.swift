@@ -35,6 +35,7 @@ enum AppTab: String, CaseIterable, Hashable {
 enum AppSheet: String, Identifiable {
     case fullDiskAccess
     case restrictedFolders
+    case hiddenSpace
 
     var id: String { rawValue }
 }

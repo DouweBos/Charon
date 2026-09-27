@@ -103,10 +103,16 @@ struct AnalyzeSidebar: View {
             symbol: entry.symbol,
             tint: entry.isNeutral ? Theme.treemapNeutral : Theme.treemapColor(entry.colorIndex),
             isSelected: navigator.selectedPath == entry.path,
-            showsChevron: entry.drillable
+            showsChevron: entry.drillable || entry.isNeutral
         )
         .onTapGesture {
-            if entry.drillable { navigator.focus(entry.path) } else { navigator.select(entry.path) }
+            if entry.isNeutral {
+                navigator.present(.hiddenSpace)
+            } else if entry.drillable {
+                navigator.focus(entry.path)
+            } else {
+                navigator.select(entry.path)
+            }
         }
         .onHover { hovering in navigator.select(hovering ? entry.path : nil) }
         .contextMenu {

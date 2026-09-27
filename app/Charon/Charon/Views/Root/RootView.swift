@@ -33,6 +33,7 @@ struct RootView: View {
             switch sheet {
             case .fullDiskAccess: FullDiskAccessSheet()
             case .restrictedFolders: RestrictedFoldersSheet()
+            case .hiddenSpace: HiddenSpaceSheet()
             }
         }
         .alert("Charon", isPresented: Binding(get: { ferry.errorMessage != nil }, set: { if !$0 { ferry.dismissError() } })) {

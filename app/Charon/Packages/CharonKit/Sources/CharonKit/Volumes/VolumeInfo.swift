@@ -13,6 +13,8 @@ public struct VolumeInfo: Sendable, Hashable, Identifiable, Codable {
     public var uuid: String?
     public var totalBytes: Int64
     public var availableBytes: Int64
+    /// Space macOS can free on demand (local snapshots, caches); counted as available.
+    public var purgeableBytes: Int64 = 0
     public var fileSystem: String
     public var isBoot: Bool
     public var isInternal: Bool
