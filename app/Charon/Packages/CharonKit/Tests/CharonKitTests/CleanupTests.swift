@@ -44,3 +44,31 @@ struct CollectorSetTests {
         #expect(set.items.map(\.path) == ["/a/x"])
     }
 }
+
+struct CleanResolverTests {
+    @Test func wildcards() {
+        #expect(CleanResolver.wildcard("Install macOS*.app", matches: "Install macOS Tahoe.app"))
+        #expect(!CleanResolver.wildcard("Install macOS*.app", matches: "Xcode.app"))
+        #expect(CleanResolver.wildcard("*DeviceSupport", matches: "iOS DeviceSupport"))
+        #expect(!CleanResolver.wildcard("*DeviceSupport", matches: "DeviceSupport.old"))
+    }
+
+    @Test func expandsContentsAndSkipsExcludes() throws {
+        let home = try TempDirectory()
+        try home.file("Library/Caches/com.app/data", bytes: 10)
+        try home.file("Library/Caches/Homebrew/pkg", bytes: 10)
+        try home.file("Library/Developer/Xcode/iOS DeviceSupport/18.0/x", bytes: 10)
+        try home.file("Library/Developer/Xcode/tvOS DeviceSupport/18.0/x", bytes: 10)
+        let resolver = CleanResolver(homeDirectory: home.url)
+
+        let caches = try #require(CleanCatalog.all.first { $0.id == "system.caches" })
+        #expect(resolver.items(for: caches).map(\.lastPathComponent) == ["com.app"])
+
+        let support = try #require(CleanCatalog.all.first { $0.id == "xcode.deviceSupport" })
+        #expect(resolver.items(for: support).count == 2)
+    }
+
+    @Test func catalogIdsAreUnique() {
+        #expect(Set(CleanCatalog.all.map(\.id)).count == CleanCatalog.all.count)
+    }
+}
