@@ -45,13 +45,13 @@ public struct FaultInjector: Sendable {
 }
 
 public actor OffloadEngine {
-    private let store: ManifestStore
-    private let resolver: any VolumeResolving
-    private let faults: FaultInjector?
+    let store: ManifestStore
+    let resolver: any VolumeResolving
+    let faults: FaultInjector?
     private let driveFolder: String
     private var manifest: OffloadManifest
     /// Records with an operation running right now; `reconcile` must not touch them.
-    private var inFlight: Set<UUID> = []
+    var inFlight: Set<UUID> = []
     /// Set when the manifest exists but can't be read. All writes are refused so it isn't overwritten.
     public private(set) var manifestProblem: String?
 
@@ -96,6 +96,7 @@ public actor OffloadEngine {
         let (bytes, files) = try await runBlocking { _ in try Self.measure(source) }
         // Baseline before copying: anything written after this point (even mid-verify) aborts the swap.
         let fingerprint = try await runBlocking { _ in try TreeFingerprint.capture(source) }
+        guard !manifest.records.contains(where: { $0.originalPath == source.path }) else { throw OffloadError.recordBusy }
         let id = UUID()
         inFlight.insert(id)
         defer { inFlight.remove(id) }
@@ -110,21 +111,12 @@ public actor OffloadEngine {
         do {
             let copy = record.copyURL(mountPoint: mount)
             try FileManager.default.createDirectory(at: copy.deletingLastPathComponent(), withIntermediateDirectories: true)
-            let faults = faults
-            try await runBlocking { flag in
-                var copier = TreeCopier(flag: flag) { progress(OffloadProgress(stage: .copying, bytesDone: $0, bytesTotal: bytes)) }
-                copier.afterFile = { try faults?.hook(.copiedFile($0)) }
-                try copier.copy(from: source, to: copy)
-            }
+            try await copyTree(from: source, to: copy, bytes: bytes, fault: FaultPoint.copiedFile, progress: progress)
 
             try fault(.beforeVerify)
             record.phase = .verifying
             try commit(record)
-            let digest = try await runBlocking { flag in
-                try TreeVerifier(flag: flag) { progress(OffloadProgress(stage: .verifying, bytesDone: $0, bytesTotal: bytes)) }
-                    .verify(source: source, copy: copy)
-            }
-            record.treeDigest = digest
+            record.treeDigest = try await verifyTree(source: source, copy: copy, bytes: bytes, progress: progress)
             guard (try? TreeFingerprint.capture(source)) == fingerprint else {
                 throw OffloadError.changedDuringOffload(record.originalPath)
             }
@@ -172,87 +164,26 @@ public actor OffloadEngine {
         try fault(.afterSymlink)
     }
 
-    // MARK: - Move back
+    // MARK: - Steps
 
-    public func moveBack(
-        _ id: UUID, progress: @escaping @Sendable (OffloadProgress) -> Void = { _ in }
+    func copyTree(
+        from source: URL, to destination: URL, bytes: Int64, fault point: @escaping @Sendable (Int) -> FaultPoint,
+        progress: @escaping @Sendable (OffloadProgress) -> Void
     ) async throws {
-        guard var record = manifest.records.first(where: { $0.id == id }) else { throw OffloadError.recordNotFound }
-        guard record.phase == .offloaded else { throw OffloadError.recordBusy }
-        guard let mount = resolver.mountPoint(forVolumeUUID: record.drive.volumeUUID) else {
-            throw OffloadError.driveUnavailable(record.drive.name)
+        let faults = faults
+        try await runBlocking { flag in
+            var copier = TreeCopier(flag: flag) { progress(OffloadProgress(stage: .copying, bytesDone: $0, bytesTotal: bytes)) }
+            copier.afterFile = { try faults?.hook(point($0)) }
+            try copier.copy(from: source, to: destination)
         }
-        let copy = record.copyURL(mountPoint: mount)
-        guard let linkTarget = try? FileManager.default.destinationOfSymbolicLink(atPath: record.originalPath) else {
-            throw OffloadError.brokenLink("\(record.originalPath) is no longer a symlink, so it can't be replaced.")
-        }
-        guard FileManager.default.fileExists(atPath: copy.path) else {
-            throw OffloadError.brokenLink("The copy on \(record.drive.name) is missing.")
-        }
-        let (bytes, _) = try await runBlocking { _ in try Self.measure(copy) }
-        if let home = resolver.volume(containing: record.originalURL.deletingLastPathComponent()),
-           home.availableBytes < bytes {
-            throw OffloadError.notEnoughSpace(needed: bytes, available: home.availableBytes)
-        }
+    }
 
-        let staging = record.returnStagingURL
-        let baseline = try await runBlocking { _ in try TreeFingerprint.capture(copy) }
-        inFlight.insert(id)
-        defer { inFlight.remove(id) }
-        record.phase = .returnCopying
-        try commit(record)
-        do {
-            let faults = faults
-            try await runBlocking { flag in
-                var copier = TreeCopier(flag: flag) { progress(OffloadProgress(stage: .copying, bytesDone: $0, bytesTotal: bytes)) }
-                copier.afterFile = { try faults?.hook(.returnCopiedFile($0)) }
-                try copier.copy(from: copy, to: staging)
-            }
-
-            record.phase = .returnVerifying
-            try commit(record)
-            _ = try await runBlocking { flag in
-                try TreeVerifier(flag: flag) { progress(OffloadProgress(stage: .verifying, bytesDone: $0, bytesTotal: bytes)) }
-                    .verify(source: copy, copy: staging)
-            }
-
-            record.phase = .returnSwapping
-            try commit(record)
-            progress(OffloadProgress(stage: .swapping, bytesDone: bytes, bytesTotal: bytes))
-            guard (try? FileManager.default.destinationOfSymbolicLink(atPath: record.originalPath)) == linkTarget else {
-                throw OffloadError.brokenLink("\(record.originalPath) changed while moving it back.")
-            }
-            guard (try? TreeFingerprint.capture(copy)) == baseline else {
-                throw OffloadError.changedDuringOffload(record.originalPath)
-            }
-            try posixCheck(unlink(record.originalPath))
-            try fault(.afterRemoveSymlink)
-            try posixCheck(rename(staging.path, record.originalPath))
-
-            try fault(.beforeReturnCleanup)
-            record.phase = .returnCleaning
-            try commit(record)
-            progress(OffloadProgress(stage: .cleaning, bytesDone: bytes, bytesTotal: bytes))
-            let container = record.containerURL(mountPoint: mount)
-            // Writes through the link between the last check and the unlink would only exist on the drive; keep it.
-            guard (try? TreeFingerprint.capture(copy)) == baseline else {
-                try remove(record)
-                throw OffloadError.keptDriveCopy(
-                    "Moved back, but files on \(record.drive.name) changed during the move. Its copy was kept at \(copy.path)."
-                )
-            }
-            try await runBlocking { _ in try Self.removeTree(container) }
-            try remove(record)
-        } catch is FaultInjector.Crash {
-            throw FaultInjector.Crash()
-        } catch OffloadError.keptDriveCopy(let message) {
-            // Already resolved: the record is gone on purpose and recovery must not delete the kept copy.
-            throw OffloadError.keptDriveCopy(message)
-        } catch {
-            record.lastError = error.localizedDescription
-            try? commit(record)
-            _ = await recover(id)
-            throw error
+    func verifyTree(
+        source: URL, copy: URL, bytes: Int64, progress: @escaping @Sendable (OffloadProgress) -> Void
+    ) async throws -> String {
+        try await runBlocking { flag in
+            try TreeVerifier(flag: flag) { progress(OffloadProgress(stage: .verifying, bytesDone: $0, bytesTotal: bytes)) }
+                .verify(source: source, copy: copy)
         }
     }
 
@@ -385,7 +316,7 @@ public actor OffloadEngine {
         try FileManager.default.removeItem(at: url)
     }
 
-    private func fault(_ point: FaultPoint) throws {
+    func fault(_ point: FaultPoint) throws {
         try faults?.hook(point)
     }
 
