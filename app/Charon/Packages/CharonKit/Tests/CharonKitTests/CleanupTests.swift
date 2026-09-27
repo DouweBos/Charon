@@ -87,3 +87,20 @@ struct CleanMeasurerTests {
         #expect(items[0].bytes >= 400_000)
     }
 }
+
+struct AppInventoryTests {
+    @Test func findsLeftoversByBundleIDAndName() throws {
+        let home = try TempDirectory()
+        try home.file("Library/Application Support/com.example.Tool/db", bytes: 10)
+        try home.file("Library/Caches/Tool/cache", bytes: 10)
+        try home.file("Library/Preferences/com.example.Tool.plist", bytes: 10)
+        try home.file("Library/Group Containers/ABCDE12345.com.example.Tool/x", bytes: 10)
+        try home.file("Library/LaunchAgents/com.example.Tool.helper.plist", bytes: 10)
+        try home.file("Library/Caches/com.other.App/cache", bytes: 10)
+        let inventory = AppInventory(homeDirectory: home.url, appFolders: [])
+
+        let candidates = inventory.candidates(bundleID: "com.example.Tool", name: "Tool")
+        #expect(candidates.map(\.kind).sorted() == ["Application Support", "Caches", "Group container", "Launch agent", "Preferences"])
+        #expect(candidates.filter(\.byName).map(\.kind) == ["Caches"])
+    }
+}

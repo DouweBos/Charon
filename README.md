@@ -8,6 +8,7 @@ A native macOS disk analyzer built with SwiftUI. It shows where the space on any
 - Scans are remembered, so relaunching opens on the last result
 - Nested, drillable treemap with a matching sidebar and back/forward history
 - Clean: sizes Xcode, simulator, package-manager and app caches, logs and leftovers, and moves them to the Trash
+- Uninstall: apps by size and last use, with their leftovers in ~/Library
 - Collector: gather files and folders, review the total, move them to the Trash (protected locations refused)
 - "System & other" breakdown: system volume, VM/Preboot/Recovery, purgeable, restricted
 - Offload: preflight safety checks, copy, SHA-256 verification of every file, then symlink swap
@@ -51,4 +52,5 @@ Engine tests run headlessly: `cd app/Charon/Packages/CharonKit && swift test`.
 - [Architecture](docs/architecture.md)
 - [Offload](docs/offload.md)
 - [Clean](docs/clean.md)
+- [Uninstall](docs/uninstall.md)
 - [Settings](docs/settings.md)

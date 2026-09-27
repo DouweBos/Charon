@@ -19,7 +19,8 @@ struct RootView: View {
                 case .analyze: AnalyzeView()
                 case .offload: OffloadView()
                 case .clean: CleanView()
-                case .uninstall, .optimize: ComingSoonView(tab: navigator.tab)
+                case .uninstall: UninstallView()
+                case .optimize: ComingSoonView(tab: navigator.tab)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
