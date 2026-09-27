@@ -40,8 +40,13 @@ struct AnalyzeView: View {
             get: { navigator.previewPath.map { URL(fileURLWithPath: $0) } },
             set: { if $0 == nil { navigator.closePreview() } }
         ))
+        .dropDestination(for: URL.self) { urls, _ in
+            guard let url = urls.first else { return false }
+            model.scanFolder(url)
+            return true
+        }
         .onAppear { model.startCurrentScan() }
-        .onChange(of: navigator.volumeID) { model.startCurrentScan() }
+        .onChange(of: navigator.targetID) { model.startCurrentScan() }
     }
 }
 
@@ -104,7 +109,7 @@ struct AnalyzeHeader: View {
     }
 
     private var crumbs: [Breadcrumb.Crumb] {
-        let rootTitle = model.currentVolume?.name ?? "Disk"
+        let rootTitle = model.currentTarget?.name ?? "Disk"
         guard let tree = model.currentScan?.tree else { return [.init(id: "", title: rootTitle)] }
         return tree.lineage(model.focusNode).map { node in
             node == DiskTree.root

@@ -48,7 +48,7 @@ enum AnalyzeMode: String, CaseIterable, Hashable {
 
 struct NavigationLocation: Hashable {
     var tab: AppTab = .analyze
-    var volumeID: String?
+    var targetID: String?
     /// Display path of the drilled-into directory; nil is the volume root.
     var focusPath: String?
     var analyzeMode: AnalyzeMode = .map
@@ -73,7 +73,7 @@ final class AppNavigator {
 
     var location: NavigationLocation { history[index] }
     var tab: AppTab { location.tab }
-    var volumeID: String? { location.volumeID }
+    var targetID: String? { location.targetID }
     var focusPath: String? { location.focusPath }
     var analyzeMode: AnalyzeMode { location.analyzeMode }
     var canGoBack: Bool { index > 0 }
@@ -85,14 +85,14 @@ final class AppNavigator {
         push(next)
     }
 
-    func selectVolume(_ id: String) {
-        guard id != volumeID else { return }
-        push(NavigationLocation(tab: .analyze, volumeID: id, focusPath: nil))
+    func selectTarget(_ id: String) {
+        guard id != targetID else { return }
+        push(NavigationLocation(tab: .analyze, targetID: id, focusPath: nil))
     }
 
     /// Adopts a volume without a history entry (initial load, or the current disk was ejected).
-    func setDefaultVolume(_ id: String?) {
-        history[index].volumeID = id
+    func setDefaultTarget(_ id: String?) {
+        history[index].targetID = id
         history[index].focusPath = nil
     }
 

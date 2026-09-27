@@ -4,7 +4,8 @@ A native macOS disk analyzer built with SwiftUI. It shows where the space on any
 
 ## Features
 
-- Live, concurrent scan of the boot disk or any external disk
+- Live, concurrent scan of the boot disk, any external disk, or any folder (Scan Folder… or drag one in)
+- Scans are remembered, so relaunching opens on the last result
 - Nested, drillable treemap with a matching sidebar and back/forward history
 - Collector: gather files and folders, review the total, move them to the Trash (protected locations refused)
 - "System & other" breakdown: system volume, VM/Preboot/Recovery, purgeable, restricted

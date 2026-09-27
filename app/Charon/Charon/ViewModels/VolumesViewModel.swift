@@ -38,6 +38,11 @@ final class VolumesViewModel {
         return volumes.first { $0.id == id }
     }
 
+    func volumeContaining(_ path: String) -> VolumeInfo? {
+        guard let found = catalog.volume(containing: URL(fileURLWithPath: path)) else { return nil }
+        return volumes.first { $0.id == found.id } ?? found
+    }
+
     func refresh() {
         volumes = catalog.mountedVolumes()
     }

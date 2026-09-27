@@ -21,7 +21,7 @@ final class AppModel {
     private(set) var dismissedAccessBanner = false
 
     init() {
-        navigator.setDefaultVolume(volumes.bootVolume?.id)
+        navigator.setDefaultTarget(volumes.bootVolume?.id)
         volumes.onChange = { [weak self] in self?.volumesChanged() }
         ferry.onFerried = { [weak self] path in self?.ferried(path) }
         collector.onTrashed = { [weak self] paths in self?.trashed(paths) }
@@ -32,8 +32,20 @@ final class AppModel {
         }
     }
 
+    /// Volumes first, then recently scanned folders.
+    var targets: [ScanTarget] {
+        volumes.volumes.map(ScanTarget.volume) + analyze.folderPaths.map { path in
+            ScanTarget.folder(URL(fileURLWithPath: path), volume: volumes.volumeContaining(path))
+        }
+    }
+
+    var currentTarget: ScanTarget? {
+        targets.first { $0.id == navigator.targetID } ?? volumes.bootVolume.map(ScanTarget.volume)
+    }
+
+    /// The scanned volume, or the one holding the scanned folder.
     var currentVolume: VolumeInfo? {
-        volumes.volume(navigator.volumeID) ?? volumes.bootVolume
+        currentTarget?.volume ?? volumes.bootVolume
     }
 
     var shoreVolume: VolumeInfo? {
@@ -41,7 +53,7 @@ final class AppModel {
     }
 
     var currentScan: ScanState? {
-        analyze.state(for: currentVolume?.id)
+        analyze.state(for: currentTarget?.id)
     }
 
     /// The drilled-into node, falling back to the root while a scan hasn't reached it yet.
@@ -53,7 +65,7 @@ final class AppModel {
     /// Used space the finished scan couldn't see; shown as "System & other" at the volume root.
     var unaccountedBytes: Int64 {
         guard let scan = currentScan, scan.phase == .complete, let tree = scan.tree,
-              focusNode == DiskTree.root, let volume = currentVolume else { return 0 }
+              focusNode == DiskTree.root, currentTarget?.isFolder == false, let volume = currentVolume else { return 0 }
         return max(volume.usedBytes - tree.size(DiskTree.root), 0)
     }
 
@@ -72,13 +84,27 @@ final class AppModel {
     }
 
     func startCurrentScan() {
-        guard let volume = currentVolume else { return }
-        analyze.scanIfNeeded(volume)
+        guard let target = currentTarget else { return }
+        analyze.scanIfNeeded(target)
     }
 
     func rescanCurrent() {
-        guard let volume = currentVolume else { return }
-        analyze.rescan(volume)
+        guard let target = currentTarget else { return }
+        analyze.rescan(target)
+    }
+
+    func scanFolder(_ url: URL) {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue else { return }
+        let target = ScanTarget.folder(url, volume: volumes.volumeContaining(url.path))
+        analyze.addFolder(target.root.path)
+        navigator.selectTarget(target.id)
+    }
+
+    func chooseFolderToScan() {
+        if let url = SystemIntegration.chooseDirectory(message: "Choose a folder to scan.") {
+            scanFolder(url)
+        }
     }
 
     func requestFerry(path: String, knownBytes: Int64?) {
@@ -94,8 +120,8 @@ final class AppModel {
     }
 
     private func volumesChanged() {
-        if navigator.volumeID != nil, volumes.volume(navigator.volumeID) == nil {
-            navigator.setDefaultVolume(volumes.bootVolume?.id)
+        if navigator.targetID != nil, !targets.contains(where: { $0.id == navigator.targetID }) {
+            navigator.setDefaultTarget(volumes.bootVolume?.id)
         }
         Task { await ferry.reconcile() }
     }

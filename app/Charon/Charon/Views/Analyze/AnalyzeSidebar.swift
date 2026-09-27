@@ -25,23 +25,32 @@ struct AnalyzeSidebar: View {
 
     private var diskSummary: some View {
         Menu {
-            ForEach(volumes.volumes) { volume in
-                Button {
-                    navigator.selectVolume(volume.id)
-                } label: {
-                    Label("\(volume.name) (\(ByteSize.capacity(volume.totalBytes)))",
-                          systemImage: volume.isBoot ? "internaldrive" : "externaldrive")
+            Section("Disks") {
+                ForEach(model.targets.filter { !$0.isFolder }) { target in
+                    Button { navigator.selectTarget(target.id) } label: {
+                        Label("\(target.name) (\(target.volume.map { ByteSize.capacity($0.totalBytes) } ?? "–"))",
+                              systemImage: target.symbol)
+                    }
                 }
+            }
+            Section("Folders") {
+                ForEach(model.targets.filter(\.isFolder)) { target in
+                    Button { navigator.selectTarget(target.id) } label: {
+                        Label(target.displayRoot, systemImage: target.symbol)
+                    }
+                }
+                Button("Scan Folder…", systemImage: "folder.badge.plus") { model.chooseFolderToScan() }
             }
         } label: {
             VStack(spacing: Theme.Spacing.sm) {
                 PlanetView().frame(width: 150)
-                Text(model.currentVolume.map { ByteSize.capacity($0.totalBytes) } ?? "–")
-                    .font(.capacityTitle)
+                Text(title).font(.capacityTitle).lineLimit(1).minimumScaleFactor(0.5)
                 HStack(spacing: Theme.Spacing.xs) {
-                    Text(model.currentVolume.map { "\(ByteSize.format($0.usedBytes)) used" } ?? "")
+                    Text(subtitle)
                         .font(.system(size: 15, design: .monospaced))
                         .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(Theme.textSecondary)
@@ -53,7 +62,21 @@ struct AnalyzeSidebar: View {
         .menuStyle(.button)
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
-        .help("Choose a disk")
+        .help("Choose a disk or folder")
+    }
+
+    private var title: String {
+        guard let target = model.currentTarget else { return "–" }
+        if target.isFolder {
+            return ByteSize.format(model.currentScan?.tree?.size(DiskTree.root) ?? 0)
+        }
+        return target.volume.map { ByteSize.capacity($0.totalBytes) } ?? "–"
+    }
+
+    private var subtitle: String {
+        guard let target = model.currentTarget else { return "" }
+        if target.isFolder { return target.name }
+        return target.volume.map { "\(ByteSize.format($0.usedBytes)) used" } ?? ""
     }
 
     @ViewBuilder

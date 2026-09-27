@@ -15,9 +15,9 @@ struct TreemapPanel: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             if let scan = model.currentScan, scan.isScanning {
                 ProgressStrip(
-                    title: "Scanning \(model.currentVolume?.name ?? "disk")",
+                    title: "Scanning \(model.currentTarget?.name ?? "disk")",
                     detail: "\(scan.progress.filesScanned.formatted()) files · \(ByteSize.format(scan.progress.bytesScanned))",
-                    onCancel: { model.currentVolume.map { model.analyze.cancel($0.id) } }
+                    onCancel: { model.currentTarget.map { model.analyze.cancel($0.id) } }
                 )
             }
             ZStack {

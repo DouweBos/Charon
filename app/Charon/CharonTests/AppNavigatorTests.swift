@@ -8,7 +8,7 @@ import Testing
 struct AppNavigatorTests {
     @Test func drillDownAndBackForward() {
         let navigator = AppNavigator()
-        navigator.setDefaultVolume("boot")
+        navigator.setDefaultTarget("boot")
         navigator.focus("/Users")
         navigator.focus("/Users/me")
         #expect(navigator.focusPath == "/Users/me")
@@ -34,15 +34,15 @@ struct AppNavigatorTests {
         navigator.selectTab(.ferry)
         navigator.focus("/Users")
         #expect(navigator.tab == .analyze)
-        #expect(navigator.volumeID == nil)
+        #expect(navigator.targetID == nil)
     }
 
     @Test func selectingAVolumeResetsFocus() {
         let navigator = AppNavigator()
         navigator.focus("/Users")
-        navigator.selectVolume("external")
+        navigator.selectTarget("external")
         #expect(navigator.focusPath == nil)
-        #expect(navigator.volumeID == "external")
+        #expect(navigator.targetID == "external")
         #expect(navigator.selectedPath == nil)
     }
 

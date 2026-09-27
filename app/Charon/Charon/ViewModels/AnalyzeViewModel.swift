@@ -1,7 +1,7 @@
 // ViewModels/AnalyzeViewModel.swift
 // Charon
 //
-// Runs and holds one scan per volume. Views read the latest snapshot; the scan keeps streaming until done.
+// Runs and holds one scan per target (volume or folder). Views read the latest snapshot; the scan keeps streaming until done.
 // Finished scans are archived so the next launch opens on the last result.
 
 import CharonKit
@@ -28,19 +28,31 @@ final class AnalyzeViewModel {
     private(set) var scans: [String: ScanState] = [:]
     @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private let archives = ScanArchiveStore()
+    /// Recently scanned folders, newest first.
+    private(set) var folderPaths: [String] = UserDefaults.standard.stringArray(forKey: AppSettings.recentFolders) ?? []
 
-    func state(for volumeID: String?) -> ScanState? {
-        volumeID.flatMap { scans[$0] }
+    func addFolder(_ path: String) {
+        folderPaths = Array(([path] + folderPaths.filter { $0 != path }).prefix(8))
+        UserDefaults.standard.set(folderPaths, forKey: AppSettings.recentFolders)
+    }
+
+    func removeFolder(_ path: String) {
+        folderPaths.removeAll { $0 == path }
+        UserDefaults.standard.set(folderPaths, forKey: AppSettings.recentFolders)
+    }
+
+    func state(for targetID: String?) -> ScanState? {
+        targetID.flatMap { scans[$0] }
     }
 
     /// Shows the archived scan if there is one, otherwise starts scanning.
-    func scanIfNeeded(_ volume: VolumeInfo) {
-        guard scans[volume.id] == nil else { return }
+    func scanIfNeeded(_ target: ScanTarget) {
+        guard scans[target.id] == nil else { return }
         guard UserDefaults.standard.bool(forKey: AppSettings.rememberScans) else {
-            rescan(volume)
+            rescan(target)
             return
         }
-        let id = volume.id
+        let id = target.id
         let archives = archives
         scans[id] = ScanState()
         tasks[id] = Task { [weak self] in
@@ -52,16 +64,16 @@ final class AnalyzeViewModel {
                     scannedAt: archive.scannedAt, isFromCache: true
                 )
             } else {
-                self.rescan(volume)
+                self.rescan(target)
             }
         }
     }
 
-    func rescan(_ volume: VolumeInfo) {
-        tasks[volume.id]?.cancel()
-        let id = volume.id
-        let root = volume.scanRoot
-        let displayRoot = volume.isBoot ? "/" : volume.mountPoint.path
+    func rescan(_ target: ScanTarget) {
+        tasks[target.id]?.cancel()
+        let id = target.id
+        let root = target.root
+        let displayRoot = target.displayRoot
         scans[id] = ScanState()
         Logger.scan.info("Scanning \(root.path, privacy: .public)")
 
