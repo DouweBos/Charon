@@ -49,6 +49,8 @@ xcodebuild -project Charon.xcodeproj -scheme Charon -derivedDataPath build -dest
 swiftlint lint --quiet                  # from app/Charon
 ```
 
+Agents verify by compiling only (`build`, `swift build --build-tests`, lint). Never launch the app or run tests that touch the filesystem on the development Mac; the user runs them.
+
 ## Ferry safety
 
 Ferrying moves user data. These rules are non-negotiable:
