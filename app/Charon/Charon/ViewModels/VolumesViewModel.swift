@@ -5,6 +5,7 @@
 
 import AppKit
 import CharonKit
+import Darwin
 import Observation
 
 @MainActor
@@ -38,9 +39,13 @@ final class VolumesViewModel {
         return volumes.first { $0.id == id }
     }
 
+    /// Matches the path's mount point against known volumes; cheap enough to call while rendering.
     func volumeContaining(_ path: String) -> VolumeInfo? {
-        guard let found = catalog.volume(containing: URL(fileURLWithPath: path)) else { return nil }
-        return volumes.first { $0.id == found.id } ?? found
+        var fs = statfs()
+        guard statfs(path, &fs) == 0 else { return nil }
+        let mount = withUnsafeBytes(of: &fs.f_mntonname) { String(cString: $0.bindMemory(to: CChar.self).baseAddress!) }
+        if mount == "/" || mount == "/System/Volumes/Data" { return bootVolume }
+        return volumes.first { $0.mountPoint.path == mount }
     }
 
     func refresh() {
