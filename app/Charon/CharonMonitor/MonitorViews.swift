@@ -52,6 +52,19 @@ struct MonitorMenu: View {
                         .foregroundStyle(MonitorTheme.warning)
                 }
             }
+            if !monitor.growth.isEmpty, let since = monitor.growthSince {
+                Divider()
+                Text("Grew since \(since.formatted(date: .abbreviated, time: .omitted))").font(.caption).foregroundStyle(.secondary)
+                ForEach(monitor.growth) { item in
+                    HStack {
+                        Text((item.path as NSString).lastPathComponent).lineLimit(1)
+                        Spacer()
+                        Text("+\(ByteSize.format(item.delta))").font(.system(.body, design: .monospaced))
+                            .foregroundStyle(MonitorTheme.warning)
+                    }
+                    .help(item.path)
+                }
+            }
             Divider()
             HStack {
                 Button("Open Charon") { monitor.openCharon() }

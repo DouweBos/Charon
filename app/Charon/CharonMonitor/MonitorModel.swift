@@ -13,6 +13,10 @@ final class MonitorModel: NSObject {
     private(set) var level: LowSpacePolicy.Level = .normal
     private(set) var offloadCount = 0
     private(set) var disconnectedDrives: [String] = []
+    /// Biggest growth between Charon's last two scans of the startup disk.
+    private(set) var growth: [GrowthItem] = []
+    private(set) var growthSince: Date?
+    @ObservationIgnored private var archiveStamp: Date?
 
     @ObservationIgnored private let store = UserDefaults(suiteName: MonitorSettings.suiteName) ?? .standard
     @ObservationIgnored private let catalog = VolumeCatalog()
@@ -51,6 +55,27 @@ final class MonitorModel: NSObject {
             level = next
         }
         refreshOffloads(notify: notify)
+        refreshGrowth()
+    }
+
+    /// Reads Charon's scan archives only when they change; the trees are dropped once growth is computed.
+    private func refreshGrowth() {
+        guard let boot else { return }
+        let store = ScanArchiveStore()
+        let url = store.url(forVolumeID: boot.id)
+        let stamp = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+        guard stamp != archiveStamp else { return }
+        archiveStamp = stamp
+        let id = boot.id
+        Task {
+            let result = await Task.detached(priority: .utility) { () -> ([GrowthItem], Date?) in
+                guard let current = store.load(volumeID: id), let previous = store.loadPrevious(volumeID: id) else { return ([], nil) }
+                let comparison = ScanComparison(previous: previous.tree, current: current.tree, previousDate: previous.scannedAt)
+                return (comparison.topGrowth(minimum: 500_000_000, limit: 3), previous.scannedAt)
+            }.value
+            growth = result.0
+            growthSince = result.1
+        }
     }
 
     private func refreshOffloads(notify: Bool) {
