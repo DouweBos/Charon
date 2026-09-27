@@ -120,7 +120,8 @@ public struct AppInventory: Sendable {
         }
     }
 
-    static func lastUsedDate(_ url: URL) -> Date? {
+    /// Spotlight's last-opened date; nil for items never opened or not indexed.
+    public static func lastUsedDate(_ url: URL) -> Date? {
         guard let item = MDItemCreateWithURL(nil, url as CFURL) else { return nil }
         return MDItemCopyAttribute(item, kMDItemLastUsedDate) as? Date
     }

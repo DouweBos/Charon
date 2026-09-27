@@ -20,14 +20,42 @@ struct LargestFilesView: View {
         var name: String
         var folder: String
         var size: Int64
+        /// Last opened, falling back to last modified when Spotlight doesn't know.
+        var lastUsed: Date
+    }
+
+    enum Age: Int, CaseIterable, Identifiable {
+        case any = 0, threeMonths = 90, sixMonths = 180, year = 365
+
+        var id: Int { rawValue }
+        var title: String {
+            switch self {
+            case .any: "Any age"
+            case .threeMonths: "Unused 3+ months"
+            case .sixMonths: "Unused 6+ months"
+            case .year: "Unused 1+ year"
+            }
+        }
     }
 
     @State private var rows: [Row] = []
+    @AppStorage(AppSettings.largestFilesAge) private var ageFilter = Age.any.rawValue
+
+    private var visibleRows: [Row] {
+        guard ageFilter > 0 else { return rows }
+        let cutoff = Date().addingTimeInterval(-Double(ageFilter) * 86_400)
+        return rows.filter { $0.lastUsed < cutoff }
+    }
     @State private var sortOrder = [KeyPathComparator(\Row.size, order: .reverse)]
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-            Table(rows, selection: Binding(get: { navigator.selectedPath }, set: { navigator.select($0) }), sortOrder: $sortOrder) {
+            Picker("Show", selection: $ageFilter) {
+                ForEach(Age.allCases) { Text($0.title).tag($0.rawValue) }
+            }
+            .pickerStyle(.menu)
+            .fixedSize()
+            Table(visibleRows, selection: Binding(get: { navigator.selectedPath }, set: { navigator.select($0) }), sortOrder: $sortOrder) {
                 TableColumn("Name", value: \.name) { row in
                     Label(row.name, systemImage: "doc").lineLimit(1)
                 }
@@ -35,6 +63,10 @@ struct LargestFilesView: View {
                     Text(ByteSize.format(row.size)).font(.monoCaption)
                 }
                 .width(min: 80, ideal: 100, max: 140)
+                TableColumn("Last Opened", value: \.lastUsed) { row in
+                    Text(row.lastUsed.formatted(date: .abbreviated, time: .omitted)).font(.monoCaption)
+                }
+                .width(min: 90, ideal: 110, max: 140)
                 TableColumn("Folder", value: \.folder) { row in
                     Text(row.folder).font(.monoCaption).foregroundStyle(Theme.textSecondary)
                         .lineLimit(1).truncationMode(.middle)
@@ -61,8 +93,10 @@ struct LargestFilesView: View {
             let computed = await Task.detached(priority: .userInitiated) {
                 tree.largestFiles(under: focus, limit: 500).map { node in
                     let path = tree.displayPath(node)
+                    let url = URL(fileURLWithPath: tree.realPath(node))
+                    let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
                     return Row(path: path, name: tree.name(node), folder: (path as NSString).deletingLastPathComponent,
-                               size: tree.size(node))
+                               size: tree.size(node), lastUsed: AppInventory.lastUsedDate(url) ?? modified ?? .distantPast)
                 }
             }.value
             rows = computed.sorted(using: sortOrder)

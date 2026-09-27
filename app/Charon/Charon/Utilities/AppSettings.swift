@@ -16,6 +16,7 @@ enum AppSettings {
     static let driveFolder = "offload.driveFolder"
     static let recentFolders = "scan.recentFolders"
     static let excludedPaths = "scan.excludedPaths"
+    static let largestFilesAge = "files.ageFilterDays"
     static let accessPromptShown = "onboarding.accessPromptShown"
 
     static func registerDefaults() {
