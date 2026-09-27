@@ -17,6 +17,22 @@ struct AnalyzeSidebar: View {
                     ForEach(model.levelEntries) { entry in
                         row(entry)
                     }
+                    let offloaded = model.offloadedHere
+                    if !offloaded.isEmpty {
+                        Text("On external drives").font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Theme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, Theme.Spacing.sm)
+                        ForEach(offloaded) { record in
+                            DirectoryRow(
+                                name: record.name,
+                                detail: "\(ByteSize.format(record.bytes)) · on \(record.drive.name)",
+                                symbol: "externaldrive", tint: Theme.statDisk, showsChevron: false
+                            )
+                            .onTapGesture { navigator.selectTab(.offload) }
+                            .help("Moved to \(record.drive.name). Click to see it in Offload.")
+                        }
+                    }
                 }
             }
             .scrollIndicators(.never)

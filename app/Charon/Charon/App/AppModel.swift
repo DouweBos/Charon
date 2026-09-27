@@ -82,6 +82,15 @@ final class AppModel {
         currentTarget.flatMap { analyze.comparisons[$0.id] }
     }
 
+    /// Offloaded folders that used to live directly in the drilled-into folder.
+    var offloadedHere: [OffloadRecord] {
+        guard let tree = currentScan?.tree else { return [] }
+        let here = tree.displayPath(focusNode)
+        return offload.records.filter { record in
+            record.phase == .offloaded && (record.originalPath as NSString).deletingLastPathComponent == here
+        }
+    }
+
     var hasBootScan: Bool {
         volumes.bootVolume.flatMap { analyze.state(for: $0.id)?.tree } != nil
     }
