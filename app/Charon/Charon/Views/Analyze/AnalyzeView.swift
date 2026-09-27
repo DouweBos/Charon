@@ -4,6 +4,7 @@
 // Sidebar with the disk and its biggest folders, the treemap, and live stats underneath.
 
 import CharonKit
+import QuickLook
 import SwiftUI
 
 struct AnalyzeView: View {
@@ -30,8 +31,33 @@ struct AnalyzeView: View {
         }
         .padding(.horizontal, Theme.Spacing.xl)
         .padding(.bottom, Theme.Spacing.xl)
+        .focusable()
+        .focusEffectDisabled()
+        .onKeyPress(keys: [.upArrow, .downArrow, .leftArrow, .rightArrow, .return, .space, .delete]) { press in
+            handle(press.key)
+        }
+        .quickLookPreview(Binding(
+            get: { navigator.previewPath.map { URL(fileURLWithPath: $0) } },
+            set: { if $0 == nil { navigator.closePreview() } }
+        ))
         .onAppear { model.startCurrentScan() }
         .onChange(of: navigator.volumeID) { model.startCurrentScan() }
+    }
+}
+
+extension AnalyzeView {
+    /// Finder-like keys: arrows move and open, Space previews, Delete collects.
+    private func handle(_ key: KeyEquivalent) -> KeyPress.Result {
+        switch key {
+        case .upArrow: model.moveSelection(by: -1)
+        case .downArrow: model.moveSelection(by: 1)
+        case .rightArrow, .return: model.activateSelection()
+        case .leftArrow: model.focusParent()
+        case .space: model.previewSelection()
+        case .delete: model.collectSelection()
+        default: return .ignored
+        }
+        return .handled
     }
 }
 

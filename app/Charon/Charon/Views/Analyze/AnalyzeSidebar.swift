@@ -14,7 +14,7 @@ struct AnalyzeSidebar: View {
             diskSummary
             ScrollView {
                 LazyVStack(spacing: 6) {
-                    ForEach(entries, id: \.path) { entry in
+                    ForEach(model.levelEntries) { entry in
                         row(entry)
                     }
                 }
@@ -56,67 +56,22 @@ struct AnalyzeSidebar: View {
         .help("Choose a disk")
     }
 
-    private struct Entry {
-        var path: String
-        var node: DiskTree.NodeID?
-        var title: String
-        var size: Int64
-        var symbol: String
-        var isDirectory: Bool
-        var drillable: Bool
-        var colorIndex: Int
-        var isNeutral: Bool
-    }
-
-    private var entries: [Entry] {
-        guard let tree = model.currentScan?.tree else { return [] }
-        let focus = model.focusNode
-        let base = tree.displayPath(focus)
-        let levelEntries = TreemapLayout.entries(for: tree, parent: focus, unaccountedBytes: model.unaccountedBytes, limit: 60)
-        return levelEntries.enumerated().map { index, entry in
-            switch entry.content {
-            case .node(let node):
-                let isDirectory = tree.isDirectory(node)
-                return Entry(path: tree.displayPath(node), node: node, title: entry.title, size: entry.size,
-                             symbol: isDirectory ? "folder" : "doc", isDirectory: isDirectory,
-                             drillable: entry.nestable, colorIndex: index, isNeutral: false)
-            case .looseFiles:
-                return Entry(path: base + "#files", title: entry.title, size: entry.size, symbol: "doc.on.doc",
-                             isDirectory: false, drillable: false, colorIndex: index, isNeutral: false)
-            case .others:
-                return Entry(path: base + "#others", title: entry.title, size: entry.size, symbol: "square.stack",
-                             isDirectory: false, drillable: false, colorIndex: index, isNeutral: false)
-            case .unaccounted:
-                return Entry(path: "#unaccounted", title: entry.title, size: entry.size, symbol: "gearshape",
-                             isDirectory: false, drillable: false, colorIndex: index, isNeutral: true)
-            }
-        }
-    }
-
     @ViewBuilder
-    private func row(_ entry: Entry) -> some View {
+    private func row(_ entry: LevelEntry) -> some View {
         let focusSize = model.currentScan?.tree.map { $0.size(model.focusNode) } ?? 0
         let total = max(focusSize + model.unaccountedBytes, 1)
         DirectoryRow(
             name: entry.title,
             detail: "\(ByteSize.format(entry.size)) · \(ByteSize.percent(entry.size, of: total))",
             symbol: entry.symbol,
-            tint: entry.isNeutral ? Theme.treemapNeutral : Theme.treemapColor(entry.colorIndex),
+            tint: entry.kind == .unaccounted ? Theme.treemapNeutral : Theme.treemapColor(entry.colorIndex),
             isSelected: navigator.selectedPath == entry.path,
-            showsChevron: entry.drillable || entry.isNeutral
+            showsChevron: entry.drillable || entry.kind == .unaccounted
         )
-        .onTapGesture {
-            if entry.isNeutral {
-                navigator.present(.hiddenSpace)
-            } else if entry.drillable {
-                navigator.focus(entry.path)
-            } else {
-                navigator.select(entry.path)
-            }
-        }
-        .onHover { hovering in navigator.select(hovering ? entry.path : nil) }
+        .onTapGesture { model.activate(entry) }
+        .onHover { hovering in navigator.hover(hovering ? entry.path : nil) }
         .contextMenu {
-            if entry.node != nil {
+            if entry.isNode {
                 NodeActions(path: entry.path, size: entry.size, isDirectory: entry.isDirectory, canOpen: entry.drillable)
             }
         }
@@ -136,6 +91,7 @@ struct NodeActions: View {
         if canOpen {
             Button("Open", systemImage: "arrow.down.right.and.arrow.up.left") { navigator.focus(path) }
         }
+        Button("Quick Look", systemImage: "eye") { navigator.togglePreview(path) }
         Button("Reveal in Finder", systemImage: "folder") { SystemIntegration.revealInFinder(path) }
         Button("Copy Path", systemImage: "doc.on.doc") {
             NSPasteboard.general.clearContents()

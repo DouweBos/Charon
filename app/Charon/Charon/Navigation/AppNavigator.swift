@@ -55,6 +55,10 @@ final class AppNavigator {
     /// Highlighted item (hover-independent), shared by sidebar and treemap.
     private(set) var selectedPath: String?
     private(set) var sheet: AppSheet?
+    /// Pointer-hovered item; drawn like the selection but never replaces it.
+    private(set) var hoveredPath: String?
+    /// Item shown in Quick Look.
+    private(set) var previewPath: String?
 
     init() {
         history = [NavigationLocation()]
@@ -94,6 +98,18 @@ final class AppNavigator {
 
     func select(_ path: String?) {
         selectedPath = path
+    }
+
+    func hover(_ path: String?) {
+        hoveredPath = path
+    }
+
+    func togglePreview(_ path: String) {
+        previewPath = previewPath == path ? nil : path
+    }
+
+    func closePreview() {
+        previewPath = nil
     }
 
     func present(_ sheet: AppSheet) {

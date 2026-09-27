@@ -13,6 +13,19 @@ A native macOS disk analyzer built with SwiftUI. It shows where the space on any
 - Crash-safe journal: interrupted ferries finish or roll back on next launch
 - Live CPU, memory, disk, battery and network cards
 
+## Keyboard
+
+| Key | Action |
+|---|---|
+| ↑ ↓ | Move the selection |
+| → or Return | Open the selected folder |
+| ← or ⌘↑ | Enclosing folder |
+| Space | Quick Look |
+| Delete | Add to Collector |
+| ⌘[ ⌘] | Back, Forward |
+| ⌘R | Rescan |
+| ⌘1–⌘5 | Tabs |
+
 ## Requirements
 
 - macOS 26.2+

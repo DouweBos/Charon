@@ -119,8 +119,9 @@ struct TreemapView: View {
     }
 
     private func isSelected(_ tile: TreemapTile) -> Bool {
-        guard let selectedPath, let node = tile.node else { return false }
-        return tree.displayPath(node) == selectedPath
+        guard let node = tile.node else { return false }
+        let path = tree.displayPath(node)
+        return path == selectedPath || path == navigator.hoveredPath
     }
 
     private func draw(_ tile: TreemapTile, in context: inout GraphicsContext, isHovered: Bool) {

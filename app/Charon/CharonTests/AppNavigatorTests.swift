@@ -45,4 +45,20 @@ struct AppNavigatorTests {
         #expect(navigator.volumeID == "external")
         #expect(navigator.selectedPath == nil)
     }
+
+    @Test func hoverNeverReplacesSelection() {
+        let navigator = AppNavigator()
+        navigator.select("/a")
+        navigator.hover("/b")
+        navigator.hover(nil)
+        #expect(navigator.selectedPath == "/a")
+    }
+
+    @Test func previewToggles() {
+        let navigator = AppNavigator()
+        navigator.togglePreview("/a")
+        #expect(navigator.previewPath == "/a")
+        navigator.togglePreview("/a")
+        #expect(navigator.previewPath == nil)
+    }
 }
