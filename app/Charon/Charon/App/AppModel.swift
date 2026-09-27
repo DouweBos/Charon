@@ -73,6 +73,10 @@ final class AppModel {
         return max(volume.usedBytes - tree.size(DiskTree.root), 0)
     }
 
+    var currentComparison: ScanComparison? {
+        currentTarget.flatMap { analyze.comparisons[$0.id] }
+    }
+
     var hasBootScan: Bool {
         volumes.bootVolume.flatMap { analyze.state(for: $0.id)?.tree } != nil
     }

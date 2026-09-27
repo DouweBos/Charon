@@ -27,7 +27,9 @@ struct TreemapPanel: View {
                 )
             }
             ZStack {
-                if let tree = model.currentScan?.tree, navigator.analyzeMode == .files {
+                if navigator.analyzeMode == .changes {
+                    ChangesView()
+                } else if let tree = model.currentScan?.tree, navigator.analyzeMode == .files {
                     LargestFilesView(tree: tree, focus: model.focusNode)
                 } else if let tree = model.currentScan?.tree {
                     TreemapView(
@@ -119,11 +121,17 @@ struct TreemapView: View {
         switch tile.content {
         case .node(let node):
             let items = tree.isDirectory(node) ? " · \(tree.itemCount(node).formatted()) items" : ""
-            return "\(tree.displayPath(node)) · \(ByteSize.format(tile.size))\(items)"
+            let change = model.currentComparison?.delta(atDisplayPath: tree.displayPath(node)).map(changeText) ?? ""
+            return "\(tree.displayPath(node)) · \(ByteSize.format(tile.size))\(items)\(change)"
         case .looseFiles: return "Files directly in this folder · \(ByteSize.format(tile.size))"
         case .others(_, let count): return "\(count) smaller items · \(ByteSize.format(tile.size))"
         case .unaccounted: return "macOS, snapshots and space the scan can't see · \(ByteSize.format(tile.size)) · click for a breakdown"
         }
+    }
+
+    private func changeText(_ delta: Int64) -> String {
+        guard abs(delta) >= 1_000_000 else { return "" }
+        return " · \(delta > 0 ? "+" : "−")\(ByteSize.format(abs(delta))) since last scan"
     }
 
     private func isSelected(_ tile: TreemapTile) -> Bool {

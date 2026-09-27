@@ -41,9 +41,15 @@ enum AppSheet: String, Identifiable {
 }
 
 enum AnalyzeMode: String, CaseIterable, Hashable {
-    case map, files
+    case map, files, changes
 
-    var title: String { self == .map ? "Map" : "Largest Files" }
+    var title: String {
+        switch self {
+        case .map: "Map"
+        case .files: "Largest Files"
+        case .changes: "Changes"
+        }
+    }
 }
 
 struct NavigationLocation: Hashable {
@@ -96,11 +102,11 @@ final class AppNavigator {
         history[index].focusPath = nil
     }
 
-    func focus(_ path: String?) {
-        guard path != focusPath || tab != .analyze else { return }
+    func focus(_ path: String?, mode: AnalyzeMode? = nil) {
         var next = location
         next.tab = .analyze
         next.focusPath = path
+        if let mode { next.analyzeMode = mode }
         push(next)
     }
 

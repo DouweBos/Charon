@@ -108,9 +108,25 @@ public struct ScanArchiveStore: Sendable {
         return directory.appendingPathComponent(String(safe) + ".charonscan")
     }
 
-    public func save(_ archive: ScanArchive, volumeID: String) throws {
+    /// Keeps the archive being replaced as the "previous" scan, so growth can be shown across launches.
+    public func save(_ archive: ScanArchive, volumeID: String, keepPrevious: Bool = false) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try archive.encoded().write(to: url(forVolumeID: volumeID), options: .atomic)
+        let current = url(forVolumeID: volumeID)
+        if keepPrevious, FileManager.default.fileExists(atPath: current.path) {
+            let previous = previousURL(forVolumeID: volumeID)
+            try? FileManager.default.removeItem(at: previous)
+            try FileManager.default.moveItem(at: current, to: previous)
+        }
+        try archive.encoded().write(to: current, options: .atomic)
+    }
+
+    public func previousURL(forVolumeID id: String) -> URL {
+        url(forVolumeID: id).deletingPathExtension().appendingPathExtension("previous.charonscan")
+    }
+
+    public func loadPrevious(volumeID: String) -> ScanArchive? {
+        guard let data = try? Data(contentsOf: previousURL(forVolumeID: volumeID), options: .mappedIfSafe) else { return nil }
+        return try? ScanArchive.decode(data)
     }
 
     public func load(volumeID: String) -> ScanArchive? {

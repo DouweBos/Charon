@@ -48,3 +48,7 @@ A separate `LSUIElement` app embedded as a login item so it stays small (the mai
 ## Permissions
 
 Not sandboxed: the scanner reads the whole disk and Offload creates symlinks anywhere in the user's space. Hardened runtime is on. Full Disk Access is detected by probing TCC-protected files. There is no privileged helper, so root-owned paths can't be offloaded.
+
+## Changes since the last scan
+
+Each archive save keeps the one it replaces as `<target>.previous.charonscan`. `ScanComparison` matches the two trees by display path; `topGrowth` attributes growth to the deepest folders that grew by at least 100 MB, listing a parent with its remainder when growth is spread across many small children. The Changes view in Analyze lists them, and the treemap caption shows each folder's change.

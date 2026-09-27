@@ -28,6 +28,8 @@ final class AnalyzeViewModel {
     private(set) var scans: [String: ScanState] = [:]
     @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private let archives = ScanArchiveStore()
+    /// The finished tree a running rescan will be compared against.
+    @ObservationIgnored private var baselines: [String: (tree: DiskTree, date: Date)] = [:]
     /// Recently scanned folders, newest first.
     private(set) var folderPaths: [String] = UserDefaults.standard.stringArray(forKey: AppSettings.recentFolders) ?? []
 
@@ -56,13 +58,18 @@ final class AnalyzeViewModel {
         let archives = archives
         scans[id] = ScanState()
         tasks[id] = Task { [weak self] in
-            let archive = await Task.detached(priority: .userInitiated) { archives.load(volumeID: id) }.value
+            let (archive, previous) = await Task.detached(priority: .userInitiated) {
+                (archives.load(volumeID: id), archives.loadPrevious(volumeID: id))
+            }.value
             guard let self, !Task.isCancelled else { return }
             if let archive {
                 self.scans[id] = ScanState(
                     tree: archive.tree, progress: archive.progress, phase: .complete,
                     scannedAt: archive.scannedAt, isFromCache: true
                 )
+                if let previous {
+                    self.comparisons[id] = ScanComparison(previous: previous.tree, current: archive.tree, previousDate: previous.scannedAt)
+                }
             } else {
                 self.rescan(target)
             }
@@ -74,6 +81,9 @@ final class AnalyzeViewModel {
         let id = target.id
         let root = target.root
         let displayRoot = target.displayRoot
+        if let finished = scans[id], finished.phase == .complete, let tree = finished.tree {
+            baselines[id] = (tree, finished.scannedAt ?? Date())
+        }
         scans[id] = ScanState()
         Logger.scan.info("Scanning \(root.path, privacy: .public)")
 
@@ -96,6 +106,9 @@ final class AnalyzeViewModel {
         tasks[volumeID] = nil
         if scans[volumeID]?.isScanning == true { scans[volumeID]?.phase = .cancelled }
     }
+
+    /// Previous scan versus the current one, per target, once there are two to compare.
+    private(set) var comparisons: [String: ScanComparison] = [:]
 
     /// Folders being rescanned on their own, by display path.
     private(set) var refreshingPaths: Set<String> = []
@@ -143,21 +156,24 @@ final class AnalyzeViewModel {
         if update.progress.isComplete {
             state.phase = .complete
             state.scannedAt = Date()
+            if let baseline = baselines.removeValue(forKey: id) {
+                comparisons[id] = ScanComparison(previous: baseline.tree, current: update.tree, previousDate: baseline.date)
+            }
             let files = update.progress.filesScanned
             Logger.scan.info("Scan done: \(files) files in \(update.progress.elapsed, privacy: .public)")
         }
         scans[id] = state
-        if update.progress.isComplete { archive(id) }
+        if update.progress.isComplete { archive(id, isNewScan: true) }
     }
 
-    private func archive(_ volumeID: String) {
+    private func archive(_ volumeID: String, isNewScan: Bool = false) {
         guard UserDefaults.standard.bool(forKey: AppSettings.rememberScans),
               let state = scans[volumeID], let tree = state.tree, state.phase == .complete else { return }
         let archive = ScanArchive(tree: tree, progress: state.progress, scannedAt: state.scannedAt ?? Date())
         let archives = archives
         Task.detached(priority: .utility) {
             do {
-                try archives.save(archive, volumeID: volumeID)
+                try archives.save(archive, volumeID: volumeID, keepPrevious: isNewScan)
             } catch {
                 Logger.scan.error("Couldn't archive scan: \(error.localizedDescription, privacy: .public)")
             }
