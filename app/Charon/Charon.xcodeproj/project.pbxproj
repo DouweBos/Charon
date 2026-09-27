@@ -1,0 +1,599 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CA0B14C12F6D84D200DE8FDD /* CharonKit in Frameworks */ = {isa = PBXBuildFile; productRef = CA0B14C02F6D84D200DE8FDD /* CharonKit */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CA0B149D2F6D84D200DE8FDD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CA0B14852F6D84D200DE8FDD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CA0B148C2F6D84D200DE8FDD;
+			remoteInfo = Charon;
+		};
+		CA0B14A72F6D84D200DE8FDD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CA0B14852F6D84D200DE8FDD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CA0B148C2F6D84D200DE8FDD;
+			remoteInfo = Charon;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		CA0B148D2F6D84D200DE8FDD /* Charon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Charon.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA0B149C2F6D84D200DE8FDD /* CharonTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CharonTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA0B14A62F6D84D200DE8FDD /* CharonUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CharonUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		CA0B148F2F6D84D200DE8FDD /* Charon */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Charon;
+			sourceTree = "<group>";
+		};
+		CA0B149F2F6D84D200DE8FDD /* CharonTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CharonTests;
+			sourceTree = "<group>";
+		};
+		CA0B14A92F6D84D200DE8FDD /* CharonUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CharonUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CA0B148A2F6D84D200DE8FDD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CA0B14C12F6D84D200DE8FDD /* CharonKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0B14992F6D84D200DE8FDD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0B14A32F6D84D200DE8FDD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CA0B14842F6D84D200DE8FDD = {
+			isa = PBXGroup;
+			children = (
+				CA0B148F2F6D84D200DE8FDD /* Charon */,
+				CA0B149F2F6D84D200DE8FDD /* CharonTests */,
+				CA0B14A92F6D84D200DE8FDD /* CharonUITests */,
+				CA0B148E2F6D84D200DE8FDD /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CA0B148E2F6D84D200DE8FDD /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CA0B148D2F6D84D200DE8FDD /* Charon.app */,
+				CA0B149C2F6D84D200DE8FDD /* CharonTests.xctest */,
+				CA0B14A62F6D84D200DE8FDD /* CharonUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CA0B148C2F6D84D200DE8FDD /* Charon */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA0B14B02F6D84D200DE8FDD /* Build configuration list for PBXNativeTarget "Charon" */;
+			buildPhases = (
+				CA0B14892F6D84D200DE8FDD /* Sources */,
+				CA0B148A2F6D84D200DE8FDD /* Frameworks */,
+				CA0B148B2F6D84D200DE8FDD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CA0B148F2F6D84D200DE8FDD /* Charon */,
+			);
+			name = Charon;
+			packageProductDependencies = (
+				CA0B14C02F6D84D200DE8FDD /* CharonKit */,
+			);
+			productName = Charon;
+			productReference = CA0B148D2F6D84D200DE8FDD /* Charon.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CA0B149B2F6D84D200DE8FDD /* CharonTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA0B14B32F6D84D200DE8FDD /* Build configuration list for PBXNativeTarget "CharonTests" */;
+			buildPhases = (
+				CA0B14982F6D84D200DE8FDD /* Sources */,
+				CA0B14992F6D84D200DE8FDD /* Frameworks */,
+				CA0B149A2F6D84D200DE8FDD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CA0B149E2F6D84D200DE8FDD /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CA0B149F2F6D84D200DE8FDD /* CharonTests */,
+			);
+			name = CharonTests;
+			packageProductDependencies = (
+			);
+			productName = CharonTests;
+			productReference = CA0B149C2F6D84D200DE8FDD /* CharonTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CA0B14A52F6D84D200DE8FDD /* CharonUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA0B14B62F6D84D200DE8FDD /* Build configuration list for PBXNativeTarget "CharonUITests" */;
+			buildPhases = (
+				CA0B14A22F6D84D200DE8FDD /* Sources */,
+				CA0B14A32F6D84D200DE8FDD /* Frameworks */,
+				CA0B14A42F6D84D200DE8FDD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CA0B14A82F6D84D200DE8FDD /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CA0B14A92F6D84D200DE8FDD /* CharonUITests */,
+			);
+			name = CharonUITests;
+			packageProductDependencies = (
+			);
+			productName = CharonUITests;
+			productReference = CA0B14A62F6D84D200DE8FDD /* CharonUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CA0B14852F6D84D200DE8FDD /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					CA0B148C2F6D84D200DE8FDD = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					CA0B149B2F6D84D200DE8FDD = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = CA0B148C2F6D84D200DE8FDD;
+					};
+					CA0B14A52F6D84D200DE8FDD = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = CA0B148C2F6D84D200DE8FDD;
+					};
+				};
+			};
+			buildConfigurationList = CA0B14882F6D84D200DE8FDD /* Build configuration list for PBXProject "Charon" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = CA0B14842F6D84D200DE8FDD;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CA0B14BF2F6D84D200DE8FDD /* XCLocalSwiftPackageReference "Packages/CharonKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = CA0B148E2F6D84D200DE8FDD /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CA0B148C2F6D84D200DE8FDD /* Charon */,
+				CA0B149B2F6D84D200DE8FDD /* CharonTests */,
+				CA0B14A52F6D84D200DE8FDD /* CharonUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CA0B148B2F6D84D200DE8FDD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0B149A2F6D84D200DE8FDD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0B14A42F6D84D200DE8FDD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CA0B14892F6D84D200DE8FDD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0B14982F6D84D200DE8FDD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0B14A22F6D84D200DE8FDD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CA0B149E2F6D84D200DE8FDD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CA0B148C2F6D84D200DE8FDD /* Charon */;
+			targetProxy = CA0B149D2F6D84D200DE8FDD /* PBXContainerItemProxy */;
+		};
+		CA0B14A82F6D84D200DE8FDD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CA0B148C2F6D84D200DE8FDD /* Charon */;
+			targetProxy = CA0B14A72F6D84D200DE8FDD /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		CA0B14AE2F6D84D200DE8FDD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = CKZT75PN5T;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		CA0B14AF2F6D84D200DE8FDD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = CKZT75PN5T;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		CA0B14B12F6D84D200DE8FDD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CKZT75PN5T;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.houwert.Charon;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		CA0B14B22F6D84D200DE8FDD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CKZT75PN5T;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.houwert.Charon;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		CA0B14B42F6D84D200DE8FDD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CKZT75PN5T;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.houwert.CharonTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Charon.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Charon";
+			};
+			name = Debug;
+		};
+		CA0B14B52F6D84D200DE8FDD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CKZT75PN5T;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.houwert.CharonTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Charon.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Charon";
+			};
+			name = Release;
+		};
+		CA0B14B72F6D84D200DE8FDD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CKZT75PN5T;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.houwert.CharonUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Charon;
+			};
+			name = Debug;
+		};
+		CA0B14B82F6D84D200DE8FDD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CKZT75PN5T;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.houwert.CharonUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Charon;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CA0B14882F6D84D200DE8FDD /* Build configuration list for PBXProject "Charon" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA0B14AE2F6D84D200DE8FDD /* Debug */,
+				CA0B14AF2F6D84D200DE8FDD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA0B14B02F6D84D200DE8FDD /* Build configuration list for PBXNativeTarget "Charon" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA0B14B12F6D84D200DE8FDD /* Debug */,
+				CA0B14B22F6D84D200DE8FDD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA0B14B32F6D84D200DE8FDD /* Build configuration list for PBXNativeTarget "CharonTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA0B14B42F6D84D200DE8FDD /* Debug */,
+				CA0B14B52F6D84D200DE8FDD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA0B14B62F6D84D200DE8FDD /* Build configuration list for PBXNativeTarget "CharonUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA0B14B72F6D84D200DE8FDD /* Debug */,
+				CA0B14B82F6D84D200DE8FDD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		CA0B14BF2F6D84D200DE8FDD /* XCLocalSwiftPackageReference "Packages/CharonKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/CharonKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CA0B14C02F6D84D200DE8FDD /* CharonKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CharonKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = CA0B14852F6D84D200DE8FDD /* Project object */;
+}

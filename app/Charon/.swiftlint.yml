@@ -1,0 +1,49 @@
+excluded:
+  - ${PWD}/Charon.xcodeproj
+  - ${PWD}/build
+  - ${PWD}/Packages/CharonKit/.build
+
+disabled_rules:
+  - todo
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - contains_over_first_not_nil
+  - discouraged_object_literal
+  - empty_string
+  - first_where
+  - modifier_order
+  - overridden_super_call
+  - private_action
+  - private_outlet
+  - sorted_first_last
+  - yoda_condition
+
+line_length:
+  warning: 150
+  error: 200
+
+type_body_length:
+  warning: 400
+  error: 600
+
+file_length:
+  warning: 500
+  error: 800
+
+function_body_length:
+  warning: 60
+  error: 100
+
+identifier_name:
+  min_length: 2
+  excluded:
+    - id
+    - x
+    - y
+    - i
+    - j
+
+nesting:
+  type_level: 3

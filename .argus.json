@@ -1,0 +1,17 @@
+{
+  "setup": {
+    "copy": [".claude"]
+  },
+  "run": [
+    {
+      "title": "Run Charon",
+      "command": "cd app/Charon && xcodebuild -project Charon.xcodeproj -scheme Charon -configuration Debug -derivedDataPath build -destination 'platform=macOS' build -quiet && pkill -x Charon; open build/Build/Products/Debug/Charon.app",
+      "restartOnRerun": true
+    },
+    {
+      "title": "Engine tests",
+      "command": "cd app/Charon/Packages/CharonKit && swift test",
+      "restartOnRerun": true
+    }
+  ]
+}
