@@ -97,7 +97,36 @@ final class AnalyzeViewModel {
         if scans[volumeID]?.isScanning == true { scans[volumeID]?.phase = .cancelled }
     }
 
-    /// Drops a offloaded directory from the tree so the treemap reflects the freed space without a rescan.
+    /// Folders being rescanned on their own, by display path.
+    private(set) var refreshingPaths: Set<String> = []
+
+    /// Rescans one folder and splices the result in, so a change doesn't need a full disk scan.
+    func rescanFolder(displayPath: String, in targetID: String) {
+        guard let state = scans[targetID], !state.isScanning, let tree = state.tree,
+              let node = tree.node(atDisplayPath: displayPath), tree.isDirectory(node),
+              !refreshingPaths.contains(displayPath) else { return }
+        let root = URL(fileURLWithPath: tree.realPath(node))
+        refreshingPaths.insert(displayPath)
+        Task { [weak self] in
+            var fresh: DiskTree?
+            do {
+                for try await update in DiskScanner(options: AppSettings.scanOptions).scan(root: root, displayRootPath: displayPath) {
+                    fresh = update.tree
+                }
+            } catch {
+                Logger.scan.error("Folder rescan failed: \(error.localizedDescription, privacy: .public)")
+            }
+            guard let self else { return }
+            self.refreshingPaths.remove(displayPath)
+            guard let fresh, var current = self.scans[targetID]?.tree,
+                  let target = current.node(atDisplayPath: displayPath) else { return }
+            current.graft(fresh, at: target)
+            self.scans[targetID]?.tree = current
+            self.archive(targetID)
+        }
+    }
+
+    /// Drops an offloaded directory from the tree so the treemap reflects the freed space without a rescan.
     func detach(displayPath: String) {
         for (volumeID, state) in scans where !state.isScanning {
             guard var tree = state.tree, let node = tree.node(atDisplayPath: displayPath) else { continue }

@@ -116,6 +116,9 @@ struct NodeActions: View {
         }
         Button("Quick Look", systemImage: "eye") { navigator.togglePreview(path) }
         Button("Reveal in Finder", systemImage: "folder") { SystemIntegration.revealInFinder(path) }
+        if isDirectory {
+            Button("Rescan This Folder", systemImage: "arrow.clockwise") { model.rescanFolder(path) }
+        }
         Button("Copy Path", systemImage: "doc.on.doc") {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(path, forType: .string)

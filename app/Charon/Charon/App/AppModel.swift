@@ -102,6 +102,11 @@ final class AppModel {
         analyze.scanIfNeeded(target)
     }
 
+    func rescanFolder(_ displayPath: String) {
+        guard let target = currentTarget else { return }
+        analyze.rescanFolder(displayPath: displayPath, in: target.id)
+    }
+
     func rescanCurrent() {
         guard let target = currentTarget else { return }
         analyze.rescan(target)

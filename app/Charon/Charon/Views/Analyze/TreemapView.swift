@@ -13,6 +13,12 @@ struct TreemapPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            if !model.analyze.refreshingPaths.isEmpty {
+                ProgressStrip(
+                    title: "Rescanning \(model.analyze.refreshingPaths.map { ($0 as NSString).lastPathComponent }.sorted().joined(separator: ", "))",
+                    detail: ""
+                )
+            }
             if let scan = model.currentScan, scan.isScanning {
                 ProgressStrip(
                     title: "Scanning \(model.currentTarget?.name ?? "disk")",

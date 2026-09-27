@@ -66,4 +66,25 @@ struct TreemapLayoutTests {
         #expect(tree.largestFiles(under: caches, limit: 5) == [big])
         #expect(tree.largestFiles(under: DiskTree.root, limit: 1) == [big])
     }
+
+    @Test func graftReplacesSubtreeAndFixesTotals() {
+        var tree = sampleTree()
+        let library = tree.node(atDisplayPath: "/Library")!
+        var fresh = DiskTree(rootPath: "/data/Library", displayRootPath: "/Library")
+        let fonts = fresh.addNode(name: "Fonts", parent: DiskTree.root, kind: .directory)
+        fresh.accumulate(into: fonts, size: 40, privateSize: 40, items: 1)
+
+        tree.graft(fresh, at: library)
+        #expect(tree.node(atDisplayPath: "/Library/Caches") == nil)
+        #expect(tree.size(tree.node(atDisplayPath: "/Library/Fonts")!) == 40)
+        #expect(tree.size(library) == 40)
+        #expect(tree.size(DiskTree.root) == 790)
+    }
+
+    @Test func detachedNodesStayDetachedThroughArchives() throws {
+        var tree = sampleTree()
+        tree.detach(tree.node(atDisplayPath: "/Library/Caches")!)
+        let decoded = try ScanArchive.decode(ScanArchive(tree: tree, progress: ScanProgress(), scannedAt: .now).encoded()).tree
+        #expect(decoded.node(atDisplayPath: "/Library/Caches") == nil)
+    }
 }

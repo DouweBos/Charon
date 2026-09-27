@@ -162,7 +162,32 @@ extension DiskTree {
         guard let parent = parent(id) else { return }
         accumulate(into: parent, size: -sizes[Int(id)], privateSize: -privateSizes[Int(id)], items: -itemCounts[Int(id)])
         childLists[Int(parent)].removeAll { $0 == id }
+        // Orphan marker: archives rebuild children from parents, so the subtree must not point back in.
+        parents[Int(id)] = Self.orphaned
     }
+
+    /// Replaces the contents of `id` with a fresh scan of the same folder, fixing up ancestor totals.
+    /// `subtree` must list parents before children, which every scan does.
+    public mutating func graft(_ subtree: DiskTree, at id: NodeID) {
+        for child in childLists[Int(id)] { parents[Int(child)] = Self.orphaned }
+        childLists[Int(id)] = []
+
+        var mapping = [NodeID](repeating: id, count: subtree.nodeCount)
+        for index in 1..<max(subtree.nodeCount, 1) {
+            let parent = mapping[Int(subtree.parents[index])]
+            let node = addNode(name: subtree.names[index], parent: parent, kind: subtree.kinds[index],
+                               size: subtree.sizes[index], privateSize: subtree.privateSizes[index])
+            itemCounts[Int(node)] = subtree.itemCounts[index]
+            mapping[index] = node
+        }
+
+        let sizeDelta = subtree.sizes[0] - sizes[Int(id)]
+        let privateDelta = subtree.privateSizes[0] - privateSizes[Int(id)]
+        let itemDelta = subtree.itemCounts[0] - itemCounts[Int(id)]
+        accumulate(into: id, size: sizeDelta, privateSize: privateDelta, items: itemDelta)
+    }
+
+    static let orphaned: NodeID = -2
 }
 
 // MARK: - Mutation (scanner only)
