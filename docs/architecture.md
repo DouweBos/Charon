@@ -34,8 +34,8 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 |---|---|
 | `App/` | `CharonApp`, `AppModel` (owns and wires everything), `CharonCommands` |
 | `Navigation/` | `AppNavigator`: tab, volume, focus path, selection, history |
-| `ViewModels/` | `AnalyzeViewModel`, `OffloadViewModel`, `VolumesViewModel`, `StatsViewModel` |
-| `Views/` | `Root/`, `Analyze/`, `Offload/`, `Stats/`, `Settings/` |
+| `ViewModels/` | One per area: Analyze, Offload, Volumes, Stats, HiddenSpace, Collector, Clean, Uninstall, Optimize, Duplicates; `LevelEntries`, `ScanTarget` |
+| `Views/` | `Root/`, `Analyze/`, `Offload/`, `Clean/`, `Uninstall/`, `Optimize/`, `Stats/`, `Settings/` |
 | `DesignSystem/` | `Theme` tokens and reusable components, each with a `#Preview` |
 | `Utilities/` | `AppSettings`, `SystemIntegration` (Finder, Full Disk Access), logging |
 
