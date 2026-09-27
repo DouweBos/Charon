@@ -45,6 +45,7 @@ enum AppSettings {
 
     static var driveFolderName: String {
         let name = UserDefaults.standard.string(forKey: driveFolder)?.trimmingCharacters(in: .whitespaces) ?? ""
-        return name.isEmpty || name.contains("/") ? "Charon" : name
+        // A leading dot would allow "." or "..", putting copies outside the drive folder.
+        return name.isEmpty || name.contains("/") || name.hasPrefix(".") ? "Charon" : name
     }
 }

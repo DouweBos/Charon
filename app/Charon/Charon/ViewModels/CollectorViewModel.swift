@@ -57,8 +57,12 @@ final class CollectorViewModel {
         message = nil
     }
 
-    func confirmTrash() {
+    /// Re-checks every item: something collected earlier may have been offloaded since.
+    func confirmTrash(offloadedPaths: Set<String>) {
         isConfirming = false
+        let policy = TrashPolicy(offloadedPaths: offloadedPaths)
+        let refused = collected.items.filter { policy.refusal(for: $0.path) != nil }
+        for item in refused { collected.remove(item.path) }
         let items = collected.items
         isTrashing = true
         Task {
@@ -77,6 +81,7 @@ final class CollectorViewModel {
             }
             onTrashed?(trashed)
             let freed = items.filter { trashed.contains($0.path) }.reduce(Int64(0)) { $0 + $1.bytes }
+            failures += refused.map { ($0.path as NSString).lastPathComponent }
             message = failures.isEmpty
                 ? "Moved \(ByteSize.format(freed)) to the Trash. Empty the Trash to free the space."
                 : "Couldn't move \(failures.joined(separator: ", ")) to the Trash."

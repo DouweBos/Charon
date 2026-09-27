@@ -20,8 +20,8 @@ public struct AppLeftover: Sendable, Hashable, Identifiable {
     public var url: URL
     public var kind: String
     public var bytes: Int64
-    /// Matched by the app's name rather than its bundle ID, so it might belong to something else.
-    public var isNameMatch: Bool
+    /// Matched loosely (by app name, or a longer ID that starts with this app's), so it might belong to another app.
+    public var isUncertain: Bool
     public var id: String { url.path }
 }
 
@@ -44,8 +44,8 @@ public struct AppInventory: Sendable {
     public func apps() async -> [InstalledApp] {
         var apps: [InstalledApp] = []
         for url in appBundles() {
-            guard let bundle = Bundle(url: url), let bundleID = bundle.bundleIdentifier,
-                  !bundleID.hasPrefix("com.apple."), bundleID != "com.houwert.Charon" else { continue }
+            guard let bundle = Bundle(url: url), let bundleID = bundle.bundleIdentifier?.trimmingCharacters(in: .whitespaces),
+                  Self.isUsableBundleID(bundleID), !bundleID.hasPrefix("com.apple."), bundleID != "com.houwert.Charon" else { continue }
             let name = (bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
                 ?? (bundle.object(forInfoDictionaryKey: "CFBundleName") as? String)
                 ?? url.deletingPathExtension().lastPathComponent
@@ -72,7 +72,7 @@ public struct AppInventory: Sendable {
         var found: [AppLeftover] = []
         for candidate in candidates(bundleID: app.bundleID, name: app.name) {
             let bytes = (try? await CleanMeasurer.size(of: candidate.url)) ?? 0
-            found.append(AppLeftover(url: candidate.url, kind: candidate.kind, bytes: bytes, isNameMatch: candidate.byName))
+            found.append(AppLeftover(url: candidate.url, kind: candidate.kind, bytes: bytes, isUncertain: candidate.uncertain))
         }
         return found.sorted { $0.bytes > $1.bytes }
     }
@@ -81,18 +81,43 @@ public struct AppInventory: Sendable {
     struct Candidate {
         var url: URL
         var kind: String
-        var byName = false
+        var uncertain = false
+    }
+
+    /// An empty or malformed ID would turn "Containers/<id>" into all of Containers.
+    static func isUsableBundleID(_ id: String) -> Bool {
+        id.count >= 3 && id.contains(".") && !id.contains("/") && !id.hasPrefix(".") && !id.hasSuffix(".")
+    }
+
+    /// How a folder entry relates to the bundle ID: nil (unrelated), certain, or uncertain.
+    static func fuzzyMatch(_ entry: String, bundleID id: String, folder: String) -> Bool? {
+        let stem = entry.hasSuffix(".plist") ? String(entry.dropLast(6)) : entry
+        if stem == id { return false }
+        switch folder {
+        case "Group Containers":
+            // "<TEAMID>.<bundle id>"
+            if stem.hasSuffix("." + id), !stem.dropLast(id.count + 1).contains(".") { return false }
+        case "Preferences/ByHost":
+            // "<bundle id>.<hardware UUID>"
+            if stem.hasPrefix(id + "."), UUID(uuidString: String(stem.dropFirst(id.count + 1))) != nil { return false }
+        default:
+            break
+        }
+        // Helpers ("<id>.helper") but also sibling apps ("<id>.beta"): show, but don't preselect.
+        return stem.hasPrefix(id + ".") || stem.hasSuffix("." + id) ? true : nil
     }
 
     func candidates(bundleID: String, name: String) -> [Candidate] {
+        guard Self.isUsableBundleID(bundleID) else { return [] }
+        let name = name.contains("/") || name.trimmingCharacters(in: .whitespaces).isEmpty ? bundleID : name
         let library = homeDirectory.appendingPathComponent("Library")
         func at(_ relative: String) -> URL { library.appendingPathComponent(relative) }
 
         var exact: [Candidate] = [
             Candidate(url: at("Application Support/\(bundleID)"), kind: "Application Support"),
-            Candidate(url: at("Application Support/\(name)"), kind: "Application Support", byName: true),
+            Candidate(url: at("Application Support/\(name)"), kind: "Application Support", uncertain: true),
             Candidate(url: at("Caches/\(bundleID)"), kind: "Caches"),
-            Candidate(url: at("Caches/\(name)"), kind: "Caches", byName: true),
+            Candidate(url: at("Caches/\(name)"), kind: "Caches", uncertain: true),
             Candidate(url: at("Containers/\(bundleID)"), kind: "Container"),
             Candidate(url: at("Application Scripts/\(bundleID)"), kind: "Scripts"),
             Candidate(url: at("Preferences/\(bundleID).plist"), kind: "Preferences"),
@@ -102,7 +127,7 @@ public struct AppInventory: Sendable {
             Candidate(url: at("WebKit/\(bundleID)"), kind: "Web data"),
             Candidate(url: at("Cookies/\(bundleID).binarycookies"), kind: "Web data"),
             Candidate(url: at("Logs/\(bundleID)"), kind: "Logs"),
-            Candidate(url: at("Logs/\(name)"), kind: "Logs", byName: true)
+            Candidate(url: at("Logs/\(name)"), kind: "Logs", uncertain: true)
         ]
         // Folders where the bundle ID is embedded (team-prefixed group containers, versioned agents, per-host prefs).
         let fuzzy: [(String, String)] = [
@@ -110,8 +135,9 @@ public struct AppInventory: Sendable {
         ]
         for (folder, kind) in fuzzy {
             let directory = at(folder)
-            for entry in (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? [] where entry.contains(bundleID) {
-                exact.append(Candidate(url: directory.appendingPathComponent(entry), kind: kind))
+            for entry in (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? [] {
+                guard let uncertain = Self.fuzzyMatch(entry, bundleID: bundleID, folder: folder) else { continue }
+                exact.append(Candidate(url: directory.appendingPathComponent(entry), kind: kind, uncertain: uncertain))
             }
         }
         var seen = Set<String>()

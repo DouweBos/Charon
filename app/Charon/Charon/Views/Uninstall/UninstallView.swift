@@ -128,8 +128,8 @@ private struct AppDetail: View {
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: Theme.Spacing.xs) {
                     Text(leftover.kind).font(.system(size: 13, weight: .medium))
-                    if leftover.isNameMatch {
-                        StatusBadge(title: "Matched by name", symbol: "questionmark.circle", tone: .caution)
+                    if leftover.isUncertain {
+                        StatusBadge(title: "Might belong to another app", symbol: "questionmark.circle", tone: .caution)
                     }
                 }
                 Text(leftover.url.path).font(.monoCaption).foregroundStyle(Theme.textSecondary)

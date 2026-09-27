@@ -196,6 +196,10 @@ final class AppModel {
         collector.add(path: path, bytes: bytes, isDirectory: isDirectory, offloadedPaths: Set(offload.records.map(\.originalPath)))
     }
 
+    func trashCollected() {
+        collector.confirmTrash(offloadedPaths: Set(offload.records.map(\.originalPath)))
+    }
+
     private func trashed(_ paths: [String]) {
         for path in paths { analyze.detach(displayPath: path) }
         volumes.refresh()

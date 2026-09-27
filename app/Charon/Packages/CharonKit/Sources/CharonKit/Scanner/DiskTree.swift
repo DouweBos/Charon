@@ -110,8 +110,9 @@ public struct DiskTree: Sendable {
     }
 
     public func node(atDisplayPath path: String) -> NodeID? {
-        guard path.hasPrefix(displayRootPath) else { return nil }
-        let rest = path.dropFirst(displayRootPath.count).split(separator: "/")
+        let root = displayRootPath.hasSuffix("/") ? String(displayRootPath.dropLast()) : displayRootPath
+        guard path == displayRootPath || path == root || path.hasPrefix(root + "/") else { return nil }
+        let rest = path.dropFirst(root.count).split(separator: "/")
         var current = Self.root
         for component in rest {
             guard let next = childLists[Int(current)].first(where: { names[Int($0)] == component }) else { return nil }

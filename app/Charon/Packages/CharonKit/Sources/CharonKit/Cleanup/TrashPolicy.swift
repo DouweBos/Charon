@@ -23,7 +23,11 @@ public struct TrashPolicy: Sendable {
         let home = homeDirectory.standardizedFileURL.path
         func within(_ root: String) -> Bool { path == root || path.hasPrefix(root + "/") }
 
-        if OffloadPreflight.systemRoots.contains(where: within), !OffloadPreflight.systemExceptions.contains(where: within) {
+        // Items on external disks live under /Volumes/<disk>/…; only the disk roots themselves are off limits.
+        let components = path.split(separator: "/")
+        if components.first == "Volumes" {
+            if components.count <= 2 { return "That's a whole disk." }
+        } else if OffloadPreflight.systemRoots.contains(where: within), !OffloadPreflight.systemExceptions.contains(where: within) {
             return "It's a macOS system location."
         }
         let exact = OffloadPreflight.exactRoots + OffloadPreflight.homeExactRoots.map { $0.isEmpty ? home : home + "/" + $0 }
@@ -38,6 +42,9 @@ public struct TrashPolicy: Sendable {
         }
         if offloadedPaths.contains(path) || offloadedPaths.contains(where: { path.hasPrefix($0 + "/") }) {
             return "It's offloaded. Move it back or forget it first."
+        }
+        if let inside = offloadedPaths.first(where: { $0.hasPrefix(path + "/") }) {
+            return "It contains \((inside as NSString).lastPathComponent), which is offloaded. Move that back first."
         }
         return nil
     }

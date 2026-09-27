@@ -14,14 +14,14 @@ struct TrashPolicyTests {
         for path in ["/System/Library/Fonts", "/Applications", "/Users/tester", "/Users/tester/Library",
                      "/Users/tester/Library/Keychains/login.keychain-db", "/Applications/Xcode.app/Contents/Developer",
                      "/Users/tester/Movies/Footage", "/Users/tester/Movies/Footage/clip.mov",
-                     "/System/Volumes/Data/Users/tester"] {
+                     "/System/Volumes/Data/Users/tester", "/Users/tester/Movies", "/Volumes/Backup"] {
             #expect(policy.refusal(for: path) != nil, "\(path) should be refused")
         }
     }
 
     @Test func allowsUserContent() {
         for path in ["/Users/tester/Downloads/big.dmg", "/Users/tester/Library/Caches/com.example",
-                     "/Applications/Old.app", "/Users/tester/Movies/Other"] {
+                     "/Applications/Old.app", "/Users/tester/Movies/Other", "/Volumes/Backup/Old Projects"] {
             #expect(policy.refusal(for: path) == nil, "\(path) should be allowed")
         }
     }
@@ -89,6 +89,21 @@ struct CleanMeasurerTests {
 }
 
 struct AppInventoryTests {
+    @Test func fuzzyMatchingRespectsIDBoundaries() {
+        #expect(AppInventory.fuzzyMatch("ABCDE12345.com.example.Tool", bundleID: "com.example.Tool", folder: "Group Containers") == false)
+        #expect(AppInventory.fuzzyMatch("com.example.Tool.plist", bundleID: "com.example.Tool", folder: "LaunchAgents") == false)
+        #expect(AppInventory.fuzzyMatch("com.example.Tool.beta.plist", bundleID: "com.example.Tool", folder: "LaunchAgents") == true)
+        #expect(AppInventory.fuzzyMatch("com.example.Toolbar.plist", bundleID: "com.example.Tool", folder: "LaunchAgents") == nil)
+        let host = "com.example.Tool.\(UUID().uuidString).plist"
+        #expect(AppInventory.fuzzyMatch(host, bundleID: "com.example.Tool", folder: "Preferences/ByHost") == false)
+    }
+
+    @Test func rejectsUnusableBundleIDs() {
+        let inventory = AppInventory(homeDirectory: URL(fileURLWithPath: "/Users/tester"), appFolders: [])
+        #expect(inventory.candidates(bundleID: "", name: "Tool").isEmpty)
+        #expect(!AppInventory.isUsableBundleID("nodots"))
+    }
+
     @Test func findsLeftoversByBundleIDAndName() throws {
         let home = try TempDirectory()
         try home.file("Library/Application Support/com.example.Tool/db", bytes: 10)
@@ -101,6 +116,6 @@ struct AppInventoryTests {
 
         let candidates = inventory.candidates(bundleID: "com.example.Tool", name: "Tool")
         #expect(candidates.map(\.kind).sorted() == ["Application Support", "Caches", "Group container", "Launch agent", "Preferences"])
-        #expect(candidates.filter(\.byName).map(\.kind) == ["Caches"])
+        #expect(candidates.filter(\.uncertain).map(\.kind).sorted() == ["Caches", "Launch agent"])
     }
 }

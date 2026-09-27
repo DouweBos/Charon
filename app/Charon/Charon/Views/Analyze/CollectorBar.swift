@@ -7,6 +7,7 @@ import CharonKit
 import SwiftUI
 
 struct CollectorBar: View {
+    @Environment(AppModel.self) private var model
     @Environment(CollectorViewModel.self) private var collector
     @State private var isReviewing = false
 
@@ -35,7 +36,7 @@ struct CollectorBar: View {
                 "Move \(collector.items.count) items (\(ByteSize.format(collector.totalBytes))) to the Trash?",
                 isPresented: Binding(get: { collector.isConfirming }, set: { if !$0 { collector.cancelTrash() } })
             ) {
-                Button("Move to Trash", role: .destructive) { collector.confirmTrash() }
+                Button("Move to Trash", role: .destructive) { model.trashCollected() }
                 Button("Cancel", role: .cancel) { collector.cancelTrash() }
             } message: {
                 Text("You can put them back from the Trash until it's emptied.")

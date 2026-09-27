@@ -72,7 +72,7 @@ final class UninstallViewModel {
             let found = await inventory.leftovers(for: app)
             guard !Task.isCancelled, selectedAppID == app.id else { return }
             leftovers = found
-            removing = Set(found.filter { !$0.isNameMatch }.map(\.id))
+            removing = Set(found.filter { !$0.isUncertain }.map(\.id))
             isLoadingLeftovers = false
         }
     }
