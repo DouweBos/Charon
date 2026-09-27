@@ -31,6 +31,7 @@ app/Charon/
 ├── Charon.xcodeproj            # synchronized folders: new files under Charon/ are picked up automatically
 ├── Packages/CharonKit/         # engine package: Scanner/, Treemap/, Offload/, Cleanup/, Volumes/, Stats/, Support/
 ├── Charon/                     # App/, Navigation/, ViewModels/, Views/, DesignSystem/, Utilities/
+├── CharonMonitor/              # menu bar login item, embedded in Charon.app
 ├── CharonTests/  CharonUITests/
 docs/                           # architecture.md, offload.md, settings.md
 plan/                           # plans

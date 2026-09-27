@@ -16,7 +16,7 @@ public enum OffloadStatus: Sendable, Hashable {
     case broken(String)
     case inProgress(OffloadPhase)
 
-    static func resolve(_ record: OffloadRecord, resolver: any VolumeResolving) -> OffloadStatus {
+    public static func resolve(_ record: OffloadRecord, resolver: any VolumeResolving) -> OffloadStatus {
         guard record.phase == .offloaded else { return .inProgress(record.phase) }
         guard let mount = resolver.mountPoint(forVolumeUUID: record.drive.volumeUUID) else { return .disconnected }
         let copy = record.copyURL(mountPoint: mount)

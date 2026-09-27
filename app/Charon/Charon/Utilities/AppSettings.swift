@@ -18,6 +18,7 @@ enum AppSettings {
     static let accessPromptShown = "onboarding.accessPromptShown"
 
     static func registerDefaults() {
+        UserDefaults.standard.register(defaults: MonitorSettings.defaults)
         UserDefaults.standard.register(defaults: [
             largeFileThresholdMB: 50,
             measurePrivateSize: false,

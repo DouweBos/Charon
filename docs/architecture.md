@@ -15,7 +15,7 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 | `Offload/` | `OffloadPreflight`, `OffloadEngine` (+ `Recovery`), `TreeCopier`, `TreeVerifier`, `ManifestStore`, `OffloadStatus`, `ProcessInspector` |
 | `Volumes/` | `VolumeCatalog`, `VolumeInfo`, `VolumeResolving`, `APFSInspector` (hidden space from `diskutil apfs list` and `tmutil`) |
 | `Cleanup/` | `TrashPolicy` (what may be trashed), `CollectorSet`, `CleanCatalog`, `CleanResolver`, `CleanMeasurer` |
-| `Stats/` | `SystemSampler` |
+| `Stats/` | `SystemSampler`, `LowSpacePolicy`, `MonitorSettings` |
 | `Support/` | `ByteSize` formatting, POSIX helpers |
 
 ### Scanning
@@ -39,6 +39,10 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 | `Utilities/` | `AppSettings`, `SystemIntegration` (Finder, Full Disk Access), logging |
 
 Colors live in `Assets.xcassets` with light and dark variants and are only referenced through `Theme`.
+
+## Menu bar monitor (`app/Charon/CharonMonitor`)
+
+A separate `LSUIElement` app embedded as a login item so it stays small (the main app can hold a multi-million-node scan). It polls free space every minute and on mount/unmount, uses `LowSpacePolicy` (with hysteresis) to decide when to notify, and reads the offload manifest to report disconnected drives. Settings are shared through the `com.houwert.Charon` defaults domain (`MonitorSettings`).
 
 ## Permissions
 
