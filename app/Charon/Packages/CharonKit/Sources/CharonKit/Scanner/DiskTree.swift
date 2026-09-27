@@ -223,3 +223,19 @@ extension DiskTree {
         }
     }
 }
+
+// MARK: - Export
+
+extension DiskTree {
+    /// Children of `id` as CSV (path, bytes, items, kind), largest first.
+    public func csv(childrenOf id: NodeID) -> String {
+        var lines = ["Path,Bytes,Items,Kind"]
+        for child in sortedChildren(id) {
+            let path = displayPath(child).replacingOccurrences(of: "\"", with: "\"\"")
+            lines.append("\"\(path)\",\(size(child)),\(itemCount(child)),\(isDirectory(child) ? "folder" : "file")")
+        }
+        let loose = looseFilesSize(id)
+        if loose > 0 { lines.append("\"\(displayPath(id))/(files)\",\(loose),,files") }
+        return lines.joined(separator: "\n") + "\n"
+    }
+}

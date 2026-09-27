@@ -3,7 +3,9 @@
 //
 // Owns the navigator and every ViewModel, and wires them together so views stay thin.
 
+import AppKit
 import CharonKit
+import UniformTypeIdentifiers
 import Foundation
 import Observation
 
@@ -127,6 +129,15 @@ final class AppModel {
         if let url = SystemIntegration.chooseDirectory(message: "Choose a folder for scans to skip.") {
             exclude(url.path)
         }
+    }
+
+    func exportCurrentFolder() {
+        guard let tree = currentScan?.tree else { return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.nameFieldStringValue = "\(tree.name(focusNode).replacingOccurrences(of: "/", with: "-")).csv"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try? tree.csv(childrenOf: focusNode).write(to: url, atomically: true, encoding: .utf8)
     }
 
     func rescanFolder(_ displayPath: String) {

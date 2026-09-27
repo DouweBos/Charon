@@ -87,4 +87,12 @@ struct TreemapLayoutTests {
         let decoded = try ScanArchive.decode(ScanArchive(tree: tree, progress: ScanProgress(), scannedAt: .now).encoded()).tree
         #expect(decoded.node(atDisplayPath: "/Library/Caches") == nil)
     }
+
+    @Test func exportsChildrenAsCSV() {
+        let csv = sampleTree().csv(childrenOf: DiskTree.root)
+        let lines = csv.split(separator: "\n")
+        #expect(lines.first == "Path,Bytes,Items,Kind")
+        #expect(lines[1] == "\"/Users\",700,1,folder")
+        #expect(lines.last == "\"//(files)\",50,,files")
+    }
 }
