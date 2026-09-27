@@ -19,6 +19,9 @@ struct OffloadView: View {
             }
             .fixedSize(horizontal: false, vertical: true)
 
+            if let problem = offload.manifestProblem {
+                Banner(symbol: "exclamationmark.octagon", message: problem, tone: .negative)
+            }
             if let operation = offload.operation {
                 ProgressStrip(
                     title: operationTitle(operation),

@@ -33,6 +33,7 @@ struct OffloadRequest: Identifiable {
 @Observable
 final class OffloadViewModel {
     private(set) var records: [OffloadRecord] = []
+    private(set) var manifestProblem: String?
     private(set) var statuses: [UUID: OffloadStatus] = [:]
     private(set) var operation: OffloadOperation?
     private(set) var request: OffloadRequest?
@@ -82,6 +83,7 @@ final class OffloadViewModel {
     }
 
     func refresh() async {
+        manifestProblem = await offloadEngine.manifestProblem
         records = await offloadEngine.records.sorted { ($0.offloadedAt ?? $0.startedAt) > ($1.offloadedAt ?? $1.startedAt) }
         var next: [UUID: OffloadStatus] = [:]
         for record in records {

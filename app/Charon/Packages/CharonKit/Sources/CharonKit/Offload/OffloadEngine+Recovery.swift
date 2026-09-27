@@ -100,6 +100,15 @@ extension OffloadEngine {
         if Self.pathState(record.originalURL) == .missing, Self.pathState(record.hiddenSourceURL) == .directory {
             try posixCheck(rename(record.hiddenSourceURL.path, record.originalPath))
         }
+        // Something recreated the original path while ours was hidden; never drop the only record of where it is.
+        if Self.pathState(record.hiddenSourceURL) != .missing {
+            var stuck = record
+            let message = "The original is at \(record.hiddenSourceURL.path) because something else now occupies "
+                + "\(record.originalPath). Move it back by hand, then forget this entry."
+            stuck.lastError = message
+            update(stuck)
+            return .failed(message)
+        }
         guard let mount = volumeResolver.mountPoint(forVolumeUUID: record.drive.volumeUUID) else {
             var waiting = record
             waiting.lastError = "\(record.drive.name) disconnected; its partial copy is removed when it's reconnected."
@@ -142,6 +151,6 @@ extension OffloadEngine {
 
     private func removeIfPresent(_ url: URL) throws {
         guard Self.pathState(url) != .missing else { return }
-        try FileManager.default.removeItem(at: url)
+        try Self.removeTree(url)
     }
 }

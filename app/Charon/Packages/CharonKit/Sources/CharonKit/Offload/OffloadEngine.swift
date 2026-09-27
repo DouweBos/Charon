@@ -50,6 +50,10 @@ public actor OffloadEngine {
     private let faults: FaultInjector?
     private let driveFolder: String
     private var manifest: OffloadManifest
+    /// Records with an operation running right now; `reconcile` must not touch them.
+    private var inFlight: Set<UUID> = []
+    /// Set when the manifest exists but can't be read. All writes are refused so it isn't overwritten.
+    public private(set) var manifestProblem: String?
 
     public init(
         store: ManifestStore, resolver: any VolumeResolving = VolumeCatalog(),
@@ -59,7 +63,13 @@ public actor OffloadEngine {
         self.resolver = resolver
         self.driveFolder = driveFolder
         self.faults = faults
-        manifest = (try? store.load()) ?? OffloadManifest()
+        do {
+            manifest = try store.load()
+        } catch {
+            manifest = OffloadManifest()
+            manifestProblem = "The offload manifest at \(store.url.path) couldn't be read (\(error.localizedDescription)). "
+                + "Charon won't change any offloads until it's fixed or moved aside."
+        }
     }
 
     public var records: [OffloadRecord] { manifest.records }
@@ -84,7 +94,11 @@ public actor OffloadEngine {
         guard !manifest.records.contains(where: { $0.originalPath == source.path }) else { throw OffloadError.recordBusy }
 
         let (bytes, files) = try await runBlocking { _ in try Self.measure(source) }
+        // Baseline before copying: anything written after this point (even mid-verify) aborts the swap.
+        let fingerprint = try await runBlocking { _ in try TreeFingerprint.capture(source) }
         let id = UUID()
+        inFlight.insert(id)
+        defer { inFlight.remove(id) }
         var record = OffloadRecord(
             id: id, originalPath: source.path,
             drive: OffloadDrive(volumeUUID: drive.volumeUUID, name: drive.name, mountPoint: mount),
@@ -110,8 +124,13 @@ public actor OffloadEngine {
                 try TreeVerifier(flag: flag) { progress(OffloadProgress(stage: .verifying, bytesDone: $0, bytesTotal: bytes)) }
                     .verify(source: source, copy: copy)
             }
-            let fingerprint = try TreeFingerprint.capture(source)
             record.treeDigest = digest
+            guard (try? TreeFingerprint.capture(source)) == fingerprint else {
+                throw OffloadError.changedDuringOffload(record.originalPath)
+            }
+            guard self.record(id)?.phase == .verifying, FileManager.default.fileExists(atPath: copy.path) else {
+                throw OffloadError.verificationFailed(path: "/", reason: "the copy changed state while verifying")
+            }
 
             progress(OffloadProgress(stage: .swapping, bytesDone: bytes, bytesTotal: bytes))
             record.phase = .swapping
@@ -123,7 +142,7 @@ public actor OffloadEngine {
             try commit(record)
             progress(OffloadProgress(stage: .cleaning, bytesDone: bytes, bytesTotal: bytes))
             let hidden = record.hiddenSourceURL
-            try await runBlocking { _ in try FileManager.default.removeItem(at: hidden) }
+            try await runBlocking { _ in try Self.removeTree(hidden) }
 
             record.phase = .offloaded
             record.offloadedAt = Date()
@@ -177,6 +196,9 @@ public actor OffloadEngine {
         }
 
         let staging = record.returnStagingURL
+        let baseline = try await runBlocking { _ in try TreeFingerprint.capture(copy) }
+        inFlight.insert(id)
+        defer { inFlight.remove(id) }
         record.phase = .returnCopying
         try commit(record)
         do {
@@ -200,6 +222,9 @@ public actor OffloadEngine {
             guard (try? FileManager.default.destinationOfSymbolicLink(atPath: record.originalPath)) == linkTarget else {
                 throw OffloadError.brokenLink("\(record.originalPath) changed while moving it back.")
             }
+            guard (try? TreeFingerprint.capture(copy)) == baseline else {
+                throw OffloadError.changedDuringOffload(record.originalPath)
+            }
             try posixCheck(unlink(record.originalPath))
             try fault(.afterRemoveSymlink)
             try posixCheck(rename(staging.path, record.originalPath))
@@ -209,10 +234,20 @@ public actor OffloadEngine {
             try commit(record)
             progress(OffloadProgress(stage: .cleaning, bytesDone: bytes, bytesTotal: bytes))
             let container = record.containerURL(mountPoint: mount)
-            try await runBlocking { _ in try FileManager.default.removeItem(at: container) }
+            // Writes through the link between the last check and the unlink would only exist on the drive; keep it.
+            guard (try? TreeFingerprint.capture(copy)) == baseline else {
+                try remove(record)
+                throw OffloadError.keptDriveCopy(
+                    "Moved back, but files on \(record.drive.name) changed during the move. Its copy was kept at \(copy.path)."
+                )
+            }
+            try await runBlocking { _ in try Self.removeTree(container) }
             try remove(record)
         } catch is FaultInjector.Crash {
             throw FaultInjector.Crash()
+        } catch OffloadError.keptDriveCopy(let message) {
+            // Already resolved: the record is gone on purpose and recovery must not delete the kept copy.
+            throw OffloadError.keptDriveCopy(message)
         } catch {
             record.lastError = error.localizedDescription
             try? commit(record)
@@ -277,6 +312,8 @@ public actor OffloadEngine {
 
     /// Drops a record without touching the filesystem. For entries the user resolved by hand.
     public func forget(_ id: UUID) throws {
+        guard !inFlight.contains(id) else { throw OffloadError.recordBusy }
+        try ensureWritable()
         manifest.records.removeAll { $0.id == id }
         try store.save(manifest)
     }
@@ -285,7 +322,7 @@ public actor OffloadEngine {
     @discardableResult
     public func reconcile() async -> [UUID: RecoveryOutcome] {
         var outcomes: [UUID: RecoveryOutcome] = [:]
-        for record in manifest.records where !record.phase.isAtRest {
+        for record in manifest.records where !record.phase.isAtRest && !inFlight.contains(record.id) {
             outcomes[record.id] = await recover(record.id)
         }
         return outcomes
@@ -294,6 +331,7 @@ public actor OffloadEngine {
     // MARK: - Journal
 
     func commit(_ record: OffloadRecord) throws {
+        try ensureWritable()
         if let index = manifest.records.firstIndex(where: { $0.id == record.id }) {
             manifest.records[index] = record
         } else {
@@ -304,6 +342,7 @@ public actor OffloadEngine {
     }
 
     func remove(_ record: OffloadRecord) throws {
+        try ensureWritable()
         manifest.records.removeAll { $0.id == record.id }
         try store.save(manifest)
         mirror(to: record.drive)
@@ -324,6 +363,26 @@ public actor OffloadEngine {
         let records = manifest.records.filter { $0.drive.volumeUUID == drive.volumeUUID }
         let url = mount.appendingPathComponent(driveFolder).appendingPathComponent("manifest.plist")
         try? ManifestStore.write(OffloadManifest(records: records), to: url)
+    }
+
+    private func ensureWritable() throws {
+        if let manifestProblem { throw OffloadError.blocked([manifestProblem]) }
+    }
+
+    /// `removeItem` can't unlink children of read-only directories (Go's module cache, some toolchains),
+    /// so make every directory writable first.
+    static func removeTree(_ url: URL) throws {
+        if let enumerator = FileManager.default.enumerator(atPath: url.path) {
+            chmod(url.path, 0o700)
+            for case let relative as String in enumerator {
+                let path = url.path + "/" + relative
+                var info = stat()
+                if lstat(path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR {
+                    chmod(path, (info.st_mode & 0o7777) | 0o700)
+                }
+            }
+        }
+        try FileManager.default.removeItem(at: url)
     }
 
     private func fault(_ point: FaultPoint) throws {

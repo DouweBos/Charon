@@ -14,6 +14,7 @@ public enum OffloadError: LocalizedError, Equatable {
     case recordNotFound
     case recordBusy
     case blocked([String])
+    case keptDriveCopy(String)
     case cancelled
 
     public var errorDescription: String? {
@@ -38,6 +39,8 @@ public enum OffloadError: LocalizedError, Equatable {
             return "That directory is already being moved."
         case .blocked(let reasons):
             return reasons.joined(separator: "\n")
+        case .keptDriveCopy(let message):
+            return message
         case .cancelled:
             return "Cancelled. Nothing was removed."
         }

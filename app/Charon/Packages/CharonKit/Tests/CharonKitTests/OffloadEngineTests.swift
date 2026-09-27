@@ -181,4 +181,47 @@ struct OffloadEngineTests {
         try Data("edited".utf8).write(to: fixture.source.appendingPathComponent("nested/b.txt"))
         #expect(try await engine.checkCopy(record.id) == .changedSinceOffload)
     }
+
+    @Test func writesDuringVerificationAbortTheOffload() async throws {
+        let fixture = try OffloadFixture()
+        let source = fixture.source
+        let engine = fixture.offloadEngine(faults: FaultInjector { point in
+            guard point == .beforeVerify else { return }
+            try Data("late".utf8).write(to: source.appendingPathComponent("nested/b.txt"))
+        })
+
+        await #expect(throws: OffloadError.self) { try await engine.offload(fixture.source, to: fixture.drive) }
+        #expect(!fixture.isSymlink)
+        #expect(FileManager.default.contents(atPath: source.appendingPathComponent("nested/b.txt").path) == Data("late".utf8))
+        #expect(fixture.driveContents.isEmpty)
+        #expect(await engine.records.isEmpty)
+    }
+
+    @Test func unreadableManifestBlocksChangesAndIsKept() async throws {
+        let fixture = try OffloadFixture()
+        try FileManager.default.createDirectory(at: fixture.store.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("not a plist".utf8).write(to: fixture.store.url)
+        let engine = fixture.offloadEngine()
+
+        #expect(await engine.manifestProblem != nil)
+        await #expect(throws: OffloadError.self) { try await engine.offload(fixture.source, to: fixture.drive) }
+        #expect(fixture.sourceIsIntactDirectory)
+        #expect(try Data(contentsOf: fixture.store.url) == Data("not a plist".utf8))
+    }
+
+    @Test func readOnlyFoldersAreCleanedUp() async throws {
+        let fixture = try OffloadFixture()
+        try fixture.home.file("work/Project/locked/mod.go", bytes: 100)
+        let locked = fixture.source.appendingPathComponent("locked")
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: locked.path)
+
+        let engine = fixture.offloadEngine()
+        let record = try await engine.offload(fixture.source, to: fixture.drive)
+        #expect(record.phase == .offloaded)
+        #expect(fixture.siblings == ["Project"])
+
+        try await engine.moveBack(record.id)
+        #expect(fixture.driveContents.isEmpty)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: locked.path)
+    }
 }

@@ -16,6 +16,7 @@ struct TreeCopier {
         var bytes: Int64 = 0
         var files = 0
         var base: Int64 = 0
+        var device: dev_t = 0
         var flag: CancellationFlag
         var progress: @Sendable (Int64) -> Void
 
@@ -27,6 +28,9 @@ struct TreeCopier {
 
     func copy(from source: URL, to destination: URL) throws {
         let counter = Counter(flag: flag, progress: progress)
+        var info = stat()
+        try posixCheck(lstat(source.path, &info))
+        counter.device = info.st_dev
         try copyItem(source.path, destination.path, counter)
     }
 
@@ -37,6 +41,10 @@ struct TreeCopier {
 
         switch info.st_mode & S_IFMT {
         case S_IFDIR:
+            // A volume mounted inside the source would be copied, then deleted with the original.
+            guard info.st_dev == counter.device else {
+                throw OffloadError.blocked(["\(source) is another mounted volume. Unmount it before offloading."])
+            }
             try posixCheck(mkdir(destination, 0o700))
             for name in try FileManager.default.contentsOfDirectory(atPath: source).sorted() {
                 try copyItem(source + "/" + name, destination + "/" + name, counter)
