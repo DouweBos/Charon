@@ -32,6 +32,7 @@ app/Charon/
 ├── Packages/CharonKit/         # engine package: Scanner/, Treemap/, Offload/, Cleanup/, Volumes/, Stats/, Support/
 ├── Charon/                     # App/, Navigation/, ViewModels/, Views/, DesignSystem/, Utilities/
 ├── CharonMonitor/              # menu bar login item, embedded in Charon.app
+├── CharonScanTool/             # charon-scan: read-only scanner run as root for Scan as Administrator
 ├── CharonTests/  CharonUITests/
 docs/                           # architecture.md, offload.md, settings.md
 plan/                           # plans

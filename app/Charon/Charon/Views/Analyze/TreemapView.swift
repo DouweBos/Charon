@@ -21,7 +21,7 @@ struct TreemapPanel: View {
             }
             if let scan = model.currentScan, scan.isScanning {
                 ProgressStrip(
-                    title: "Scanning \(model.currentTarget?.name ?? "disk")",
+                    title: "Scanning \(model.currentTarget?.name ?? "disk")\(scan.isAdministrator ? " as administrator" : "")",
                     detail: "\(scan.progress.filesScanned.formatted()) files · \(ByteSize.format(scan.progress.bytesScanned))",
                     onCancel: { model.currentTarget.map { model.analyze.cancel($0.id) } }
                 )

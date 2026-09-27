@@ -159,6 +159,11 @@ final class AppModel {
         analyze.rescan(target)
     }
 
+    func rescanCurrentAsAdministrator() {
+        guard let target = currentTarget else { return }
+        analyze.rescanAsAdministrator(target)
+    }
+
     func scanFolder(_ url: URL) {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue else { return }

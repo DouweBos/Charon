@@ -137,8 +137,10 @@ struct AnalyzeBanners: View {
                 symbol: "lock",
                 message: "\(scan.progress.unreadableDirectories.formatted()) folders are restricted to macOS or other users;"
                     + " their space is in System & other.",
-                actionTitle: "Show",
-                action: { navigator.present(.restrictedFolders) }
+                actionTitle: scan.isAdministrator ? "Show" : "Scan as Administrator",
+                action: {
+                    if scan.isAdministrator { navigator.present(.restrictedFolders) } else { model.rescanCurrentAsAdministrator() }
+                }
             )
         }
         if case .failed(let message) = model.currentScan?.phase {

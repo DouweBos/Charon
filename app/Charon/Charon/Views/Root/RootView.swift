@@ -65,6 +65,7 @@ struct TopBar: View {
             Spacer()
             Menu {
                 Button("Rescan", systemImage: "arrow.clockwise") { model.rescanCurrent() }
+                Button("Scan as Administrator…", systemImage: "lock.open") { model.rescanCurrentAsAdministrator() }
                 Button("Export Current Folder as CSV…", systemImage: "square.and.arrow.up") { model.exportCurrentFolder() }
                 Button("Full Disk Access…", systemImage: "lock.shield") { SystemIntegration.openFullDiskAccessSettings() }
                 Divider()

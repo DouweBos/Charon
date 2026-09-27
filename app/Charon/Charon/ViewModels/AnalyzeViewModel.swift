@@ -18,6 +18,8 @@ struct ScanState {
     /// When the shown tree was completed; set for finished and cached scans.
     var scannedAt: Date?
     var isFromCache = false
+    /// Scanned by the root helper, so restricted folders are included.
+    var isAdministrator = false
 
     var isScanning: Bool { phase == .scanning }
 }
@@ -29,6 +31,7 @@ final class AnalyzeViewModel {
     @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private let archives = ScanArchiveStore()
     /// The finished tree a running rescan will be compared against.
+    @ObservationIgnored private var adminRequests: [String: AdminScanRequest] = [:]
     @ObservationIgnored private var baselines: [String: (tree: DiskTree, date: Date)] = [:]
     /// Recently scanned folders, newest first.
     private(set) var folderPaths: [String] = UserDefaults.standard.stringArray(forKey: AppSettings.recentFolders) ?? []
@@ -101,7 +104,74 @@ final class AnalyzeViewModel {
         }
     }
 
+    /// Runs the bundled scanner as root after the system password prompt; progress comes from its progress file.
+    func rescanAsAdministrator(_ target: ScanTarget) {
+        tasks[target.id]?.cancel()
+        let id = target.id
+        let previous = scans[id]
+        if let previous, previous.phase == .complete, let tree = previous.tree {
+            baselines[id] = (tree, previous.scannedAt ?? Date())
+        }
+        let directory: URL
+        do {
+            directory = try AdminScanRunner.makeOutputDirectory()
+        } catch {
+            scans[id] = ScanState(phase: .failed(error.localizedDescription))
+            return
+        }
+        let options = AppSettings.scanOptions
+        let request = AdminScanRequest(
+            root: target.root.path, displayRoot: target.displayRoot, outputDirectory: directory.path,
+            ownerUID: getuid(), largeFileThreshold: options.largeFileThreshold,
+            excludedPaths: UserDefaults.standard.stringArray(forKey: AppSettings.excludedPaths) ?? []
+        )
+        adminRequests[id] = request
+        var state = previous ?? ScanState()
+        state.phase = .scanning
+        state.isAdministrator = true
+        scans[id] = state
+
+        tasks[id] = Task { [weak self] in
+            let poller = Task { [weak self] in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(500))
+                    if let progress = AdminScanOutput.readProgress(request.progressPath) { self?.scans[id]?.progress = progress }
+                }
+            }
+            defer {
+                poller.cancel()
+                try? FileManager.default.removeItem(at: directory)
+            }
+            do {
+                try await AdminScanRunner.run(request)
+                let archive = try await Task.detached {
+                    try ScanArchive.decode(Data(contentsOf: URL(fileURLWithPath: request.resultPath)))
+                }.value
+                self?.finishAdministratorScan(archive, for: id)
+            } catch {
+                guard let self else { return }
+                self.baselines[id] = nil
+                if case AdminScanRunner.RunError.declined = error, let previous {
+                    self.scans[id] = previous
+                } else {
+                    self.scans[id]?.phase = self.adminRequests[id] == nil ? .cancelled : .failed(error.localizedDescription)
+                }
+            }
+            self?.adminRequests[id] = nil
+        }
+    }
+
+    private func finishAdministratorScan(_ archive: ScanArchive, for id: String) {
+        var progress = archive.progress
+        progress.isComplete = true
+        apply(ScanUpdate(tree: archive.tree, progress: progress), to: id)
+        scans[id]?.isAdministrator = true
+    }
+
     func cancel(_ volumeID: String) {
+        if let request = adminRequests.removeValue(forKey: volumeID) {
+            FileManager.default.createFile(atPath: request.cancelPath, contents: nil)
+        }
         tasks[volumeID]?.cancel()
         tasks[volumeID] = nil
         if scans[volumeID]?.isScanning == true { scans[volumeID]?.phase = .cancelled }

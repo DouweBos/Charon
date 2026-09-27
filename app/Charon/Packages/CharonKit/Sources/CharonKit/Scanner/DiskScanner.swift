@@ -47,6 +47,11 @@ public struct ScanProgress: Sendable, Hashable, Codable {
 public struct ScanUpdate: Sendable {
     public var tree: DiskTree
     public var progress: ScanProgress
+
+    public init(tree: DiskTree, progress: ScanProgress) {
+        self.tree = tree
+        self.progress = progress
+    }
 }
 
 public struct DiskScanner: Sendable {
