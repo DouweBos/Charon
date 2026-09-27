@@ -126,7 +126,7 @@ public actor OffloadEngine {
             try await runBlocking { _ in try FileManager.default.removeItem(at: hidden) }
 
             record.phase = .offloaded
-            record.ferriedAt = Date()
+            record.offloadedAt = Date()
             try commit(record)
             return record
         } catch is FaultInjector.Crash {

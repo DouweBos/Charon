@@ -14,7 +14,7 @@ struct OffloadView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
             HStack(alignment: .top, spacing: Theme.Spacing.lg) {
-                obolCard
+                spaceFreedCard
                 DriveCard()
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -63,7 +63,7 @@ struct OffloadView: View {
         .task { await offload.refresh() }
     }
 
-    private var obolCard: some View {
+    private var spaceFreedCard: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             Label("Space freed", systemImage: "arrow.down.circle.fill")
                 .font(.system(size: 12, weight: .medium))

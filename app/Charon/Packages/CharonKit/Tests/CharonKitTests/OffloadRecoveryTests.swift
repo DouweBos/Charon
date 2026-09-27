@@ -86,7 +86,7 @@ struct OffloadRecoveryTests {
         }
     }
 
-    @Test func driveUnpluggedDuringMoveBackKeepsFerriedState() async throws {
+    @Test func driveUnpluggedDuringMoveBackKeepsOffloadedState() async throws {
         let fixture = try OffloadFixture()
         let offloadEngine = fixture.offloadEngine()
         let record = try await offloadEngine.offload(fixture.source, to: fixture.drive)

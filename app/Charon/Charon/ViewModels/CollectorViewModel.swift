@@ -28,8 +28,8 @@ final class CollectorViewModel {
     }
 
     /// Returns the refusal reason, if any, so callers can explain why nothing happened.
-    func add(path: String, bytes: Int64, isDirectory: Bool, ferriedPaths: Set<String>) {
-        if let refusal = TrashPolicy(ferriedPaths: ferriedPaths).refusal(for: path) {
+    func add(path: String, bytes: Int64, isDirectory: Bool, offloadedPaths: Set<String>) {
+        if let refusal = TrashPolicy(offloadedPaths: offloadedPaths).refusal(for: path) {
             message = refusal
             return
         }

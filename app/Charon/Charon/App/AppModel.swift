@@ -23,7 +23,7 @@ final class AppModel {
     init() {
         navigator.setDefaultTarget(volumes.bootVolume?.id)
         volumes.onChange = { [weak self] in self?.volumesChanged() }
-        offload.onFerried = { [weak self] path in self?.offloaded(path) }
+        offload.onOffloaded = { [weak self] path in self?.offloaded(path) }
         collector.onTrashed = { [weak self] paths in self?.trashed(paths) }
         Task { await offload.reconcile() }
         if !hasFullDiskAccess, !UserDefaults.standard.bool(forKey: AppSettings.accessPromptShown) {
@@ -127,7 +127,7 @@ final class AppModel {
     }
 
     func collect(path: String, bytes: Int64, isDirectory: Bool) {
-        collector.add(path: path, bytes: bytes, isDirectory: isDirectory, ferriedPaths: Set(offload.records.map(\.originalPath)))
+        collector.add(path: path, bytes: bytes, isDirectory: isDirectory, offloadedPaths: Set(offload.records.map(\.originalPath)))
     }
 
     private func trashed(_ paths: [String]) {

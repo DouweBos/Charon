@@ -8,11 +8,11 @@ import Foundation
 
 public struct TrashPolicy: Sendable {
     public var homeDirectory: URL
-    public var ferriedPaths: Set<String>
+    public var offloadedPaths: Set<String>
 
-    public init(homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser, ferriedPaths: Set<String> = []) {
+    public init(homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser, offloadedPaths: Set<String> = []) {
         self.homeDirectory = homeDirectory
-        self.ferriedPaths = ferriedPaths
+        self.offloadedPaths = offloadedPaths
     }
 
     static let protectedHomeItems = ["Library/Keychains", "Library/Application Support/Charon", "Library/Preferences"]
@@ -36,7 +36,7 @@ public struct TrashPolicy: Sendable {
         if path.split(separator: "/").dropLast().contains(where: { $0.hasSuffix(".app") }) {
             return "It's inside an app. Remove the whole app instead."
         }
-        if ferriedPaths.contains(path) || ferriedPaths.contains(where: { path.hasPrefix($0 + "/") }) {
+        if offloadedPaths.contains(path) || offloadedPaths.contains(where: { path.hasPrefix($0 + "/") }) {
             return "It's offloaded. Move it back or forget it first."
         }
         return nil

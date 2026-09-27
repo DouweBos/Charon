@@ -40,7 +40,7 @@ final class OffloadViewModel {
     private(set) var driveVolumeID: String? = UserDefaults.standard.string(forKey: AppSettings.driveVolumeID)
 
     /// Called with the original path after a successful offload.
-    @ObservationIgnored var onFerried: ((String) -> Void)?
+    @ObservationIgnored var onOffloaded: ((String) -> Void)?
 
     @ObservationIgnored private let offloadEngine: OffloadEngine
     @ObservationIgnored private let preflight: OffloadPreflight
@@ -66,7 +66,7 @@ final class OffloadViewModel {
         statuses[record.id] ?? .inProgress(record.phase)
     }
 
-    func isFerried(_ path: String) -> Bool {
+    func isOffloaded(_ path: String) -> Bool {
         records.contains { $0.originalPath == path }
     }
 
@@ -82,7 +82,7 @@ final class OffloadViewModel {
     }
 
     func refresh() async {
-        records = await offloadEngine.records.sorted { ($0.ferriedAt ?? $0.startedAt) > ($1.ferriedAt ?? $1.startedAt) }
+        records = await offloadEngine.records.sorted { ($0.offloadedAt ?? $0.startedAt) > ($1.offloadedAt ?? $1.startedAt) }
         var next: [UUID: OffloadStatus] = [:]
         for record in records {
             next[record.id] = await offloadEngine.status(of: record)
@@ -145,7 +145,7 @@ final class OffloadViewModel {
                 let record = try await offloadEngine.offload(source, to: drive, progress: tracker.report)
                 Logger.offload.info("Offloaded \(record.originalPath, privacy: .public)")
                 self.request?.stage = .done(reclaimed: record.bytes)
-                onFerried?(record.originalPath)
+                onOffloaded?(record.originalPath)
             } catch {
                 Logger.offload.error("Offload failed: \(error.localizedDescription, privacy: .public)")
                 self.request?.stage = .failed(error.localizedDescription)

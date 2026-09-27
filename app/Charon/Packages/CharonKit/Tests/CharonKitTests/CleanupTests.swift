@@ -7,7 +7,7 @@ import Testing
 
 struct TrashPolicyTests {
     private let policy = TrashPolicy(
-        homeDirectory: URL(fileURLWithPath: "/Users/tester"), ferriedPaths: ["/Users/tester/Movies/Footage"]
+        homeDirectory: URL(fileURLWithPath: "/Users/tester"), offloadedPaths: ["/Users/tester/Movies/Footage"]
     )
 
     @Test func refusesProtectedLocations() {

@@ -52,7 +52,7 @@ public struct OffloadRecord: Codable, Sendable, Hashable, Identifiable {
     public var fileCount: Int64
     public var phase: OffloadPhase
     public var startedAt: Date
-    public var ferriedAt: Date?
+    public var offloadedAt: Date?
     /// SHA-256 over every file's relative path and content digest, recorded at verification.
     public var treeDigest: String?
     public var lastError: String?

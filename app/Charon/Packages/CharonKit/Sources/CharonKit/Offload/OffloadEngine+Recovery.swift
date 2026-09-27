@@ -13,7 +13,7 @@ public enum RecoveryOutcome: Sendable, Hashable {
     /// Offload or return finished.
     case completed
     /// Returned to `.offloaded` after an aborted move back.
-    case restoredFerried
+    case restoredOffloaded
     /// Waiting for the drive to be reconnected to clean up.
     case waitingForDrive
     case failed(String)
@@ -48,7 +48,7 @@ extension OffloadEngine {
                 return .completed
             case .returnCopying, .returnVerifying:
                 try removeIfPresent(record.returnStagingURL)
-                return restoreFerried(record)
+                return restoreOffloaded(record)
             case .returnSwapping:
                 return try recoverReturnSwap(record)
             case .returnCleaning:
@@ -91,7 +91,7 @@ extension OffloadEngine {
             return try finishReturn(record)
         default:
             try removeIfPresent(record.returnStagingURL)
-            return restoreFerried(record)
+            return restoreOffloaded(record)
         }
     }
 
@@ -114,7 +114,7 @@ extension OffloadEngine {
     private func finishOffload(_ record: OffloadRecord) throws -> RecoveryOutcome {
         var done = record
         done.phase = .offloaded
-        done.ferriedAt = done.ferriedAt ?? Date()
+        done.offloadedAt = done.offloadedAt ?? Date()
         done.lastError = nil
         try commit(done)
         return .completed
@@ -133,11 +133,11 @@ extension OffloadEngine {
         return .completed
     }
 
-    private func restoreFerried(_ record: OffloadRecord) -> RecoveryOutcome {
+    private func restoreOffloaded(_ record: OffloadRecord) -> RecoveryOutcome {
         var offloaded = record
         offloaded.phase = .offloaded
         update(offloaded)
-        return .restoredFerried
+        return .restoredOffloaded
     }
 
     private func removeIfPresent(_ url: URL) throws {
