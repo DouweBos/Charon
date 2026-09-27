@@ -40,11 +40,18 @@ enum AppSheet: String, Identifiable {
     var id: String { rawValue }
 }
 
+enum AnalyzeMode: String, CaseIterable, Hashable {
+    case map, files
+
+    var title: String { self == .map ? "Map" : "Largest Files" }
+}
+
 struct NavigationLocation: Hashable {
     var tab: AppTab = .analyze
     var volumeID: String?
     /// Display path of the drilled-into directory; nil is the volume root.
     var focusPath: String?
+    var analyzeMode: AnalyzeMode = .map
 }
 
 @MainActor
@@ -68,6 +75,7 @@ final class AppNavigator {
     var tab: AppTab { location.tab }
     var volumeID: String? { location.volumeID }
     var focusPath: String? { location.focusPath }
+    var analyzeMode: AnalyzeMode { location.analyzeMode }
     var canGoBack: Bool { index > 0 }
     var canGoForward: Bool { index < history.count - 1 }
 
@@ -93,6 +101,13 @@ final class AppNavigator {
         var next = location
         next.tab = .analyze
         next.focusPath = path
+        push(next)
+    }
+
+    func setAnalyzeMode(_ mode: AnalyzeMode) {
+        var next = location
+        next.tab = .analyze
+        next.analyzeMode = mode
         push(next)
     }
 

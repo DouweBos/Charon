@@ -21,7 +21,9 @@ struct TreemapPanel: View {
                 )
             }
             ZStack {
-                if let tree = model.currentScan?.tree {
+                if let tree = model.currentScan?.tree, navigator.analyzeMode == .files {
+                    LargestFilesView(tree: tree, focus: model.focusNode)
+                } else if let tree = model.currentScan?.tree {
                     TreemapView(
                         tree: tree, focus: model.focusNode, unaccountedBytes: model.unaccountedBytes,
                         depth: min(max(depth, 1), 3), selectedPath: navigator.selectedPath

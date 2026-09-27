@@ -80,6 +80,12 @@ struct AnalyzeHeader: View {
                 navigator.focus(crumb.id.isEmpty ? nil : crumb.id)
             }
             Spacer()
+            Picker("View", selection: Binding(get: { navigator.analyzeMode }, set: { navigator.setAnalyzeMode($0) })) {
+                ForEach(AnalyzeMode.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
             if let scan = model.currentScan, !scan.isScanning, let scannedAt = scan.scannedAt {
                 Text("Scanned \(Text(scannedAt, style: .relative)) ago")
                     .font(.monoCaption)

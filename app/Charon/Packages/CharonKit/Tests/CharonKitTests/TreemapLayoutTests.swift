@@ -56,4 +56,14 @@ struct TreemapLayoutTests {
         #expect(tree.size(tree.node(atDisplayPath: "/Library")!) == 50)
         #expect(tree.size(DiskTree.root) == 800)
     }
+
+    @Test func largestFilesWalksTheSubtree() {
+        var tree = sampleTree()
+        let caches = tree.node(atDisplayPath: "/Library/Caches")!
+        let big = tree.addNode(name: "big.bin", parent: caches, kind: .file, size: 90)
+        let small = tree.addNode(name: "small.bin", parent: DiskTree.root, kind: .file, size: 10)
+        #expect(tree.largestFiles(under: DiskTree.root, limit: 5) == [big, small])
+        #expect(tree.largestFiles(under: caches, limit: 5) == [big])
+        #expect(tree.largestFiles(under: DiskTree.root, limit: 1) == [big])
+    }
 }

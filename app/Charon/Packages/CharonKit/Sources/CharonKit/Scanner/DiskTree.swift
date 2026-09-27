@@ -138,6 +138,22 @@ public struct DiskTree: Sendable {
     }
 }
 
+// MARK: - Queries
+
+extension DiskTree {
+    /// The biggest file nodes under `id`, largest first. Only files above the scan's threshold are nodes.
+    public func largestFiles(under id: NodeID, limit: Int) -> [NodeID] {
+        var files: [NodeID] = []
+        var stack = [id]
+        while let next = stack.popLast() {
+            for child in childLists[Int(next)] {
+                if kinds[Int(child)] == .file { files.append(child) } else { stack.append(child) }
+            }
+        }
+        return Array(files.sorted { sizes[Int($0)] > sizes[Int($1)] }.prefix(limit))
+    }
+}
+
 // MARK: - Editing
 
 extension DiskTree {
