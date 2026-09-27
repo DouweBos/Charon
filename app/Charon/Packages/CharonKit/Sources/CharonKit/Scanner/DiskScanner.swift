@@ -28,12 +28,14 @@ public struct ScanOptions: Sendable, Hashable {
     }
 }
 
-public struct ScanProgress: Sendable, Hashable {
+public struct ScanProgress: Sendable, Hashable, Codable {
     public var filesScanned: Int64 = 0
     public var directoriesScanned: Int64 = 0
     public var bytesScanned: Int64 = 0
     /// Directories we couldn't read, usually for lack of Full Disk Access.
     public var unreadableDirectories: Int64 = 0
+    /// The first few unreadable directories (real paths), so the UI can show what's missing.
+    public var unreadablePaths: [String] = []
     public var elapsed: Duration = .zero
     public var isComplete = false
 
@@ -112,6 +114,8 @@ final class ScanJob: @unchecked Sendable {
     private let options: ScanOptions
     private let finished = Atomic<Bool>(false)
 
+    private static let unreadablePathLimit = 500
+
     // Flags from <sys/stat.h>.
     private static let datalessFlag: UInt32 = 0x4000_0000
 
@@ -185,7 +189,12 @@ final class ScanJob: @unchecked Sendable {
                 }
             }
         } catch {
-            state.withLock { $0.progress.unreadableDirectories += 1 }
+            state.withLock { state in
+                state.progress.unreadableDirectories += 1
+                if state.progress.unreadablePaths.count < Self.unreadablePathLimit {
+                    state.progress.unreadablePaths.append(path)
+                }
+            }
         }
 
         let jobs: [(DiskTree.NodeID, String)] = state.withLock { state in

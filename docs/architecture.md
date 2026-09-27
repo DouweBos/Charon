@@ -10,7 +10,7 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 
 | Folder | Contents |
 |---|---|
-| `Scanner/` | `DiskScanner` (worker threads + `WorkQueue`), `BulkDirectoryReader` (`getattrlistbulk`), `DiskTree` (struct-of-arrays snapshot) |
+| `Scanner/` | `DiskScanner` (worker threads + `WorkQueue`), `BulkDirectoryReader` (`getattrlistbulk`), `DiskTree` (struct-of-arrays snapshot), `ScanArchive` |
 | `Treemap/` | `SquarifiedLayout` (pure), `TreemapLayout` (nested tiles, hit-testing, shared level entries) |
 | `Ferry/` | `FerryPreflight`, `Ferryman` (+ `Recovery`), `TreeCopier`, `TreeVerifier`, `ManifestStore`, `FerryStatus`, `ProcessInspector` |
 | `Volumes/` | `VolumeCatalog`, `VolumeInfo`, `VolumeResolving` |
@@ -23,6 +23,7 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 - Worker threads pull directories from a LIFO queue. Each finished directory is attached to a mutex-guarded `DiskTree` and its bytes added up the ancestor chain, so snapshots (every 250 ms) are always consistent partial trees.
 - The boot disk is scanned at `/System/Volumes/Data` and displayed as `/`. Other devices (mount points) are skipped, symlinks are not followed, dataless iCloud items are never materialized.
 - Hardlinked files count once. Files under the large-file threshold roll into their folder's "Files".
+- Finished scans are archived per volume by `ScanArchive` (JSON header plus raw column arrays) and reopened on launch.
 - Used space the scan can't see (system volume, snapshots, purgeable) appears as "System & other" at the root.
 
 ## App (`app/Charon/Charon`)

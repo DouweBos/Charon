@@ -53,6 +53,12 @@ struct AnalyzeHeader: View {
                 navigator.focus(crumb.id.isEmpty ? nil : crumb.id)
             }
             Spacer()
+            if let scan = model.currentScan, !scan.isScanning, let scannedAt = scan.scannedAt {
+                Text("Scanned \(Text(scannedAt, style: .relative)) ago")
+                    .font(.monoCaption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .help(scannedAt.formatted(date: .abbreviated, time: .shortened))
+            }
             if let volume = model.currentVolume {
                 UsageBar(used: volume.usedBytes, total: volume.totalBytes)
             }

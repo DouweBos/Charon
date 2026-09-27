@@ -5,6 +5,7 @@ All settings are in UserDefaults (`com.houwert.Charon`) and, unless noted, in th
 | Key | Default | Where | Effect |
 |---|---|---|---|
 | `scan.largeFileThresholdMB` | 50 | Scanning | Files at least this big get their own treemap tile; smaller ones roll into "Files". Applies to the next scan. |
+| `scan.rememberResults` | true | Scanning | Archive finished scans in `~/Library/Caches/com.houwert.Charon/Scans` and open on them next launch; Rescan refreshes. |
 | `scan.measurePrivateSize` | false | Scanning | Also measure bytes not shared with APFS clones. Roughly doubles scan time; local Time Machine snapshots make it read low. |
 | `treemap.depth` | 2 | Treemap | Nesting levels drawn at once (1–3). |
 | `stats.visible` | true | Treemap | Show the live stat cards under Analyze. |

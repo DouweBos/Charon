@@ -40,6 +40,21 @@ public struct DiskTree: Sendable {
         kinds = [.directory]
     }
 
+    init(
+        rootPath: String, displayRootPath: String, names: [String], parents: [NodeID], childLists: [[NodeID]],
+        sizes: [Int64], privateSizes: [Int64], itemCounts: [Int64], kinds: [Kind]
+    ) {
+        self.rootPath = rootPath
+        self.displayRootPath = displayRootPath
+        self.names = names
+        self.parents = parents
+        self.childLists = childLists
+        self.sizes = sizes
+        self.privateSizes = privateSizes
+        self.itemCounts = itemCounts
+        self.kinds = kinds
+    }
+
     public var nodeCount: Int { names.count }
 
     public func name(_ id: NodeID) -> String { names[Int(id)] }

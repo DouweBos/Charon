@@ -2,6 +2,7 @@
 // Charon
 //
 // Runs and holds one scan per volume. Views read the latest snapshot; the scan keeps streaming until done.
+// Finished scans are archived so the next launch opens on the last result.
 
 import CharonKit
 import Foundation
@@ -14,6 +15,9 @@ struct ScanState {
     var tree: DiskTree?
     var progress = ScanProgress()
     var phase: Phase = .scanning
+    /// When the shown tree was completed; set for finished and cached scans.
+    var scannedAt: Date?
+    var isFromCache = false
 
     var isScanning: Bool { phase == .scanning }
 }
@@ -23,14 +27,34 @@ struct ScanState {
 final class AnalyzeViewModel {
     private(set) var scans: [String: ScanState] = [:]
     @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
+    @ObservationIgnored private let archives = ScanArchiveStore()
 
     func state(for volumeID: String?) -> ScanState? {
         volumeID.flatMap { scans[$0] }
     }
 
+    /// Shows the archived scan if there is one, otherwise starts scanning.
     func scanIfNeeded(_ volume: VolumeInfo) {
         guard scans[volume.id] == nil else { return }
-        rescan(volume)
+        guard UserDefaults.standard.bool(forKey: AppSettings.rememberScans) else {
+            rescan(volume)
+            return
+        }
+        let id = volume.id
+        let archives = archives
+        scans[id] = ScanState()
+        tasks[id] = Task { [weak self] in
+            let archive = await Task.detached(priority: .userInitiated) { archives.load(volumeID: id) }.value
+            guard let self, !Task.isCancelled else { return }
+            if let archive {
+                self.scans[id] = ScanState(
+                    tree: archive.tree, progress: archive.progress, phase: .complete,
+                    scannedAt: archive.scannedAt, isFromCache: true
+                )
+            } else {
+                self.rescan(volume)
+            }
+        }
     }
 
     func rescan(_ volume: VolumeInfo) {
@@ -67,6 +91,7 @@ final class AnalyzeViewModel {
             guard var tree = state.tree, let node = tree.node(atDisplayPath: displayPath) else { continue }
             tree.detach(node)
             scans[volumeID]?.tree = tree
+            archive(volumeID)
         }
     }
 
@@ -76,9 +101,25 @@ final class AnalyzeViewModel {
         state.progress = update.progress
         if update.progress.isComplete {
             state.phase = .complete
+            state.scannedAt = Date()
             let files = update.progress.filesScanned
             Logger.scan.info("Scan done: \(files) files in \(update.progress.elapsed, privacy: .public)")
         }
         scans[id] = state
+        if update.progress.isComplete { archive(id) }
+    }
+
+    private func archive(_ volumeID: String) {
+        guard UserDefaults.standard.bool(forKey: AppSettings.rememberScans),
+              let state = scans[volumeID], let tree = state.tree, state.phase == .complete else { return }
+        let archive = ScanArchive(tree: tree, progress: state.progress, scannedAt: state.scannedAt ?? Date())
+        let archives = archives
+        Task.detached(priority: .utility) {
+            do {
+                try archives.save(archive, volumeID: volumeID)
+            } catch {
+                Logger.scan.error("Couldn't archive scan: \(error.localizedDescription, privacy: .public)")
+            }
+        }
     }
 }

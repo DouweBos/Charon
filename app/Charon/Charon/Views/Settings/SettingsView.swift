@@ -9,6 +9,7 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage(AppSettings.largeFileThresholdMB) private var largeFileThresholdMB = 50
     @AppStorage(AppSettings.measurePrivateSize) private var measurePrivateSize = false
+    @AppStorage(AppSettings.rememberScans) private var rememberScans = true
     @AppStorage(AppSettings.treemapDepth) private var treemapDepth = 2
     @AppStorage(AppSettings.showStats) private var showStats = true
     @AppStorage(AppSettings.shoreFolder) private var shoreFolder = "Charon"
@@ -19,6 +20,7 @@ struct SettingsView: View {
                 Picker("Show files as their own tile from", selection: $largeFileThresholdMB) {
                     ForEach([10, 50, 100, 500, 1000], id: \.self) { Text("\($0) MB").tag($0) }
                 }
+                Toggle("Open on the last scan", isOn: $rememberScans)
                 Toggle("Measure APFS clone savings", isOn: $measurePrivateSize)
                 Text("Counts only bytes not shared with clones. Slower, and local Time Machine snapshots make it read low.")
                     .font(.caption).foregroundStyle(.secondary)

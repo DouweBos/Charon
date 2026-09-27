@@ -9,6 +9,7 @@ import Foundation
 enum AppSettings {
     static let largeFileThresholdMB = "scan.largeFileThresholdMB"
     static let measurePrivateSize = "scan.measurePrivateSize"
+    static let rememberScans = "scan.rememberResults"
     static let treemapDepth = "treemap.depth"
     static let showStats = "stats.visible"
     static let shoreVolumeID = "ferry.shoreVolumeID"
@@ -18,6 +19,7 @@ enum AppSettings {
         UserDefaults.standard.register(defaults: [
             largeFileThresholdMB: 50,
             measurePrivateSize: false,
+            rememberScans: true,
             treemapDepth: 2,
             showStats: true,
             shoreFolder: "Charon"
