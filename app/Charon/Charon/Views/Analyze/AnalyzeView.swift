@@ -20,6 +20,7 @@ struct AnalyzeView: View {
                     AnalyzeHeader()
                     AnalyzeBanners()
                     TreemapPanel()
+                    CollectorBar()
                 }
             }
             if showStats {

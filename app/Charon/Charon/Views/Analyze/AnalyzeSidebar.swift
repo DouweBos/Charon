@@ -141,8 +141,11 @@ struct NodeActions: View {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(path, forType: .string)
         }
+        Divider()
+        Button("Add to Collector", systemImage: "tray.and.arrow.down") {
+            model.collect(path: path, bytes: size, isDirectory: isDirectory)
+        }
         if isDirectory {
-            Divider()
             Button("Ferry to Other Shore…", systemImage: "ferry") {
                 model.requestFerry(path: path, knownBytes: size)
             }

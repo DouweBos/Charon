@@ -16,6 +16,7 @@ final class AppModel {
     let ferry = FerryViewModel()
     let stats = StatsViewModel()
     let hiddenSpace = HiddenSpaceViewModel()
+    let collector = CollectorViewModel()
     private(set) var hasFullDiskAccess = SystemIntegration.hasFullDiskAccess
     private(set) var dismissedAccessBanner = false
 
@@ -23,6 +24,7 @@ final class AppModel {
         navigator.setDefaultVolume(volumes.bootVolume?.id)
         volumes.onChange = { [weak self] in self?.volumesChanged() }
         ferry.onFerried = { [weak self] path in self?.ferried(path) }
+        collector.onTrashed = { [weak self] paths in self?.trashed(paths) }
         Task { await ferry.reconcile() }
         if !hasFullDiskAccess, !UserDefaults.standard.bool(forKey: AppSettings.accessPromptShown) {
             UserDefaults.standard.set(true, forKey: AppSettings.accessPromptShown)
@@ -96,6 +98,15 @@ final class AppModel {
             navigator.setDefaultVolume(volumes.bootVolume?.id)
         }
         Task { await ferry.reconcile() }
+    }
+
+    func collect(path: String, bytes: Int64, isDirectory: Bool) {
+        collector.add(path: path, bytes: bytes, isDirectory: isDirectory, ferriedPaths: Set(ferry.records.map(\.originalPath)))
+    }
+
+    private func trashed(_ paths: [String]) {
+        for path in paths { analyze.detach(displayPath: path) }
+        volumes.refresh()
     }
 
     private func ferried(_ path: String) {

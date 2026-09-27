@@ -14,6 +14,7 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 | `Treemap/` | `SquarifiedLayout` (pure), `TreemapLayout` (nested tiles, hit-testing, shared level entries) |
 | `Ferry/` | `FerryPreflight`, `Ferryman` (+ `Recovery`), `TreeCopier`, `TreeVerifier`, `ManifestStore`, `FerryStatus`, `ProcessInspector` |
 | `Volumes/` | `VolumeCatalog`, `VolumeInfo`, `VolumeResolving`, `APFSInspector` (hidden space from `diskutil apfs list` and `tmutil`) |
+| `Cleanup/` | `TrashPolicy` (what may be trashed), `CollectorSet` |
 | `Stats/` | `SystemSampler` |
 | `Support/` | `ByteSize` formatting, POSIX helpers |
 

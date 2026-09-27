@@ -6,6 +6,8 @@ A native macOS disk analyzer built with SwiftUI. It shows where the space on any
 
 - Live, concurrent scan of the boot disk or any external disk
 - Nested, drillable treemap with a matching sidebar and back/forward history
+- Collector: gather files and folders, review the total, move them to the Trash (protected locations refused)
+- "System & other" breakdown: system volume, VM/Preboot/Recovery, purgeable, restricted
 - Ferry: preflight safety checks, copy, SHA-256 verification of every file, then symlink swap
 - Ferried directory tracking: Ferried, Stranded (drive unplugged), Relocated, Broken; Bring home and Relink
 - Crash-safe journal: interrupted ferries finish or roll back on next launch
