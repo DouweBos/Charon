@@ -20,7 +20,7 @@ struct RootView: View {
                 case .offload: OffloadView()
                 case .clean: CleanView()
                 case .uninstall: UninstallView()
-                case .optimize: ComingSoonView(tab: navigator.tab)
+                case .optimize: OptimizeView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -83,17 +83,5 @@ struct TopBar: View {
         .padding(.horizontal, Theme.Spacing.xl)
         .padding(.top, Theme.Spacing.sm)
         .padding(.bottom, Theme.Spacing.md)
-    }
-}
-
-struct ComingSoonView: View {
-    let tab: AppTab
-
-    var body: some View {
-        ContentUnavailableView(
-            tab.title, systemImage: tab.symbol,
-            description: Text("Not built yet. Analyze and Offload are where Charon does its work for now.")
-        )
-        .foregroundStyle(Theme.textSecondary)
     }
 }

@@ -19,6 +19,7 @@ final class AppModel {
     let collector = CollectorViewModel()
     let clean = CleanViewModel()
     let uninstall = UninstallViewModel()
+    let optimize = OptimizeViewModel()
     private(set) var hasFullDiskAccess = SystemIntegration.hasFullDiskAccess
     private(set) var dismissedAccessBanner = false
 
