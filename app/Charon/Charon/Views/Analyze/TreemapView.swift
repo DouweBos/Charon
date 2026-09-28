@@ -64,15 +64,32 @@ struct TreemapView: View {
     let selectedPath: String?
 
     @State private var hoveredID: Int?
+    @State private var cache = LayoutCache<LayoutKey, [TreemapTile]>()
     private let captionHeight: CGFloat = 16
+
+    private struct LayoutKey: Hashable {
+        var nodes: Int
+        var focus: DiskTree.NodeID
+        var size: Int64
+        var unaccounted: Int64
+        var depth: Int
+        var width: CGFloat
+        var height: CGFloat
+    }
 
     var body: some View {
         GeometryReader { proxy in
-            let tiles = TreemapLayout.tiles(
-                for: tree, focus: focus,
-                in: CGRect(x: 0, y: 0, width: proxy.size.width, height: max(proxy.size.height - captionHeight - Theme.Spacing.xs, 0)),
-                configuration: TreemapConfiguration(maxDepth: depth), unaccountedBytes: unaccountedBytes
+            let height = max(proxy.size.height - captionHeight - Theme.Spacing.xs, 0)
+            let key = LayoutKey(
+                nodes: tree.nodeCount, focus: focus, size: tree.size(focus), unaccounted: unaccountedBytes,
+                depth: depth, width: proxy.size.width, height: height
             )
+            let tiles = cache.value(for: key) {
+                TreemapLayout.tiles(
+                    for: tree, focus: focus, in: CGRect(x: 0, y: 0, width: proxy.size.width, height: height),
+                    configuration: TreemapConfiguration(maxDepth: depth), unaccountedBytes: unaccountedBytes
+                )
+            }
             let hovered = hoveredID.flatMap { id in tiles.first { $0.id == id } }
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 Canvas { context, _ in
@@ -82,7 +99,9 @@ struct TreemapView: View {
                 }
                 .onContinuousHover { phase in
                     switch phase {
-                    case .active(let point): hoveredID = TreemapLayout.hitTest(tiles, at: point)?.id
+                    case .active(let point):
+                        let id = TreemapLayout.hitTest(tiles, at: point)?.id
+                        if id != hoveredID { hoveredID = id }
                     case .ended: hoveredID = nil
                     }
                 }

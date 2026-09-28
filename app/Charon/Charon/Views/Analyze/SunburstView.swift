@@ -15,8 +15,17 @@ struct SunburstView: View {
     let unaccountedBytes: Int64
 
     @State private var hoveredID: Int?
+    @State private var cache = LayoutCache<LayoutKey, [SunburstSegment]>()
     private let maxDepth = 6
     private let captionHeight: CGFloat = 16
+
+    /// Everything the layout depends on; a new scan snapshot changes the node count or sizes.
+    private struct LayoutKey: Hashable {
+        var nodes: Int
+        var focus: DiskTree.NodeID
+        var size: Int64
+        var unaccounted: Int64
+    }
 
     private struct Geometry {
         var center: CGPoint
@@ -30,9 +39,10 @@ struct SunburstView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let segments = SunburstLayout.segments(
-                for: tree, focus: focus, maxDepth: maxDepth, unaccountedBytes: unaccountedBytes
-            )
+            let key = LayoutKey(nodes: tree.nodeCount, focus: focus, size: tree.size(focus), unaccounted: unaccountedBytes)
+            let segments = cache.value(for: key) {
+                SunburstLayout.segments(for: tree, focus: focus, maxDepth: maxDepth, unaccountedBytes: unaccountedBytes)
+            }
             let area = CGSize(width: proxy.size.width, height: max(proxy.size.height - captionHeight - Theme.Spacing.xs, 0))
             let radius = max(min(area.width, area.height) / 2 - Theme.Spacing.sm, 10)
             let geometry = Geometry(
@@ -43,11 +53,16 @@ struct SunburstView: View {
 
             VStack(spacing: Theme.Spacing.xs) {
                 ZStack {
+                    // The rings don't depend on hover, so moving the pointer only redraws the highlight overlay.
                     Canvas { context, _ in
-                        for segment in segments {
-                            draw(segment, geometry: geometry, isHovered: segment.id == hoveredID, in: &context)
+                        for segment in segments { draw(segment, geometry: geometry, in: &context) }
+                    }
+                    Canvas { context, _ in
+                        for segment in segments where segment.id == hoveredID || isSelected(segment) {
+                            context.stroke(path(segment, geometry: geometry), with: .color(Theme.textPrimary), lineWidth: 2)
                         }
                     }
+                    .allowsHitTesting(false)
                     centerLabel(hovered: hovered)
                         .frame(width: geometry.hole * 1.8, height: geometry.hole * 1.8)
                         .position(geometry.center)
@@ -57,7 +72,9 @@ struct SunburstView: View {
                 .contentShape(Rectangle())
                 .onContinuousHover { phase in
                     switch phase {
-                    case .active(let point): hoveredID = hit(point, segments: segments, geometry: geometry)?.id
+                    case .active(let point):
+                        let id = hit(point, segments: segments, geometry: geometry)?.id
+                        if id != hoveredID { hoveredID = id }
                     case .ended: hoveredID = nil
                     }
                 }
@@ -104,7 +121,7 @@ struct SunburstView: View {
         .minimumScaleFactor(0.6)
     }
 
-    private func draw(_ segment: SunburstSegment, geometry: Geometry, isHovered: Bool, in context: inout GraphicsContext) {
+    private func path(_ segment: SunburstSegment, geometry: Geometry) -> Path {
         let (inner, outer) = geometry.radii(segment.depth)
         let start = Angle.radians(segment.startAngle - .pi / 2)
         let end = Angle.radians(segment.endAngle - .pi / 2)
@@ -112,6 +129,11 @@ struct SunburstView: View {
         path.addArc(center: geometry.center, radius: outer, startAngle: start, endAngle: end, clockwise: false)
         path.addArc(center: geometry.center, radius: inner, startAngle: end, endAngle: start, clockwise: true)
         path.closeSubpath()
+        return path
+    }
+
+    private func draw(_ segment: SunburstSegment, geometry: Geometry, in context: inout GraphicsContext) {
+        let path = path(segment, geometry: geometry)
 
         let isNeutral: Bool
         switch segment.content {
@@ -120,9 +142,6 @@ struct SunburstView: View {
         }
         context.fill(path, with: .color(Theme.sunburstFill(colorIndex: segment.colorIndex, depth: segment.depth, isNeutral: isNeutral)))
         context.stroke(path, with: .color(Theme.background), lineWidth: 1)
-        if isHovered || isSelected(segment) {
-            context.stroke(path, with: .color(Theme.textPrimary), lineWidth: 2)
-        }
     }
 
     private func hit(_ point: CGPoint, segments: [SunburstSegment], geometry: Geometry) -> SunburstSegment? {
