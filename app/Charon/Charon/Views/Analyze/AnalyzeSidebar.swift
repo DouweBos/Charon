@@ -16,7 +16,8 @@ struct AnalyzeSidebar: View {
                 LazyVStack(spacing: 6) {
                     if let peeked = model.peekedNode, let tree = model.currentScan?.tree {
                         PeekList(tree: tree, node: peeked, entries: model.entries(of: peeked),
-                                 tint: Theme.treemapColor(navigator.peekColorIndex))
+                                 tint: Theme.treemapColor(navigator.peekColorIndex),
+                                 groupedBelow: navigator.peekGroupedBelow, isLooseFiles: navigator.peekIsLooseFiles)
                     } else {
                         ForEach(model.levelEntries) { entry in
                             row(entry)
@@ -184,25 +185,47 @@ private struct PeekList: View {
     let node: DiskTree.NodeID
     let entries: [LevelEntry]
     let tint: Color
+    var groupedBelow: Int64?
+    var isLooseFiles = false
 
-    /// Like DaisyDisk: list what matters (1% of the folder or more, at most 12), fold the rest into one line.
+    /// The entries this peek is about: a group shows only the small ones folded into it.
+    private var candidates: [LevelEntry] {
+        guard let groupedBelow else { return entries }
+        return entries.filter { $0.size < groupedBelow && $0.kind != .unaccounted }
+    }
+
+    private var headerTitle: String {
+        if isLooseFiles { return "Files in \(tree.name(node))" }
+        if groupedBelow != nil { return "Smaller items in \(tree.name(node))" }
+        return tree.name(node)
+    }
+
+    private var headerSize: Int64 {
+        if isLooseFiles { return tree.looseFilesSize(node) }
+        if groupedBelow != nil { return candidates.reduce(0) { $0 + $1.size } }
+        return tree.size(node)
+    }
+
+    /// Like DaisyDisk: list what matters (1% of the total or more, at most 12), fold the rest into one line.
     private var shown: [LevelEntry] {
-        let total = max(tree.size(node), 1)
-        return Array(entries.filter { $0.size * 100 >= total && $0.kind != .others }.prefix(12))
+        guard !isLooseFiles else { return [] }
+        let total = max(headerSize, 1)
+        return Array(candidates.filter { $0.size * 100 >= total && $0.kind != .others }.prefix(12))
     }
 
     private var smallerBytes: Int64 {
+        guard !isLooseFiles else { return 0 }
         let shownIDs = Set(shown.map(\.id))
-        return entries.filter { !shownIDs.contains($0.id) }.reduce(0) { $0 + $1.size }
+        return candidates.filter { !shownIDs.contains($0.id) }.reduce(0) { $0 + $1.size }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             HStack(spacing: Theme.Spacing.sm) {
                 Circle().fill(tint).frame(width: 12, height: 12)
-                Text(tree.name(node)).font(.system(size: 17, weight: .medium)).lineLimit(1).truncationMode(.middle)
+                Text(headerTitle).font(.system(size: 17, weight: .medium)).lineLimit(1).truncationMode(.middle)
                 Spacer()
-                Text(ByteSize.format(tree.size(node))).font(.system(size: 17, weight: .medium, design: .rounded))
+                Text(ByteSize.format(headerSize)).font(.system(size: 17, weight: .medium, design: .rounded))
             }
             .padding(.bottom, Theme.Spacing.xs)
             ForEach(shown) { entry in
@@ -224,7 +247,10 @@ private struct PeekList: View {
                     Text(ByteSize.format(smallerBytes)).font(.monoCaption).foregroundStyle(Theme.textSecondary)
                 }
             }
-            if entries.isEmpty {
+            if isLooseFiles {
+                Text("Files too small to show individually, directly in this folder.")
+                    .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+            } else if candidates.isEmpty {
                 Text(tree.isDirectory(node) ? "Empty folder" : "File").font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
             }
         }

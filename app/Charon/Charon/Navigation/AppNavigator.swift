@@ -127,11 +127,17 @@ final class AppNavigator {
     private(set) var peekPath: String?
     /// The peeked segment's color, so the sidebar's dots match the rings.
     private(set) var peekColorIndex = 0
+    /// Set when the peeked segment is a group of small items in `peekPath`: only entries below this size.
+    private(set) var peekGroupedBelow: Int64?
+    /// Set when the peeked segment is the loose files directly in `peekPath`.
+    private(set) var peekIsLooseFiles = false
 
-    func peek(_ path: String?, colorIndex: Int = 0) {
-        guard peekPath != path else { return }
+    func peek(_ path: String?, colorIndex: Int = 0, groupedBelow: Int64? = nil, looseFiles: Bool = false) {
+        guard peekPath != path || peekGroupedBelow != groupedBelow || peekIsLooseFiles != looseFiles else { return }
         peekPath = path
         peekColorIndex = colorIndex
+        peekGroupedBelow = groupedBelow
+        peekIsLooseFiles = looseFiles
     }
 
     func hover(_ path: String?) {

@@ -104,7 +104,7 @@ struct SunburstView: View {
                         let segment = hit(point, segments: segments, geometry: geometry)
                         if segment?.id != hoveredID {
                             hoveredID = segment?.id
-                            navigator.peek(segment?.node.map { tree.displayPath($0) }, colorIndex: segment?.colorIndex ?? 0)
+                            peek(segment)
                         }
                     case .ended:
                         hoveredID = nil
@@ -194,6 +194,25 @@ struct SunburstView: View {
         // Clockwise from 12 o'clock, in screen coordinates (y down).
         let angle = atan2(Double(dx), Double(-dy))
         return SunburstLayout.hitTest(segments, angle: angle, depth: depth)
+    }
+
+    /// Shows the hovered segment's contents in the sidebar: a folder, the small items folded into a group,
+    /// or the loose files of a folder.
+    private func peek(_ segment: SunburstSegment?) {
+        guard let segment else {
+            navigator.peek(nil)
+            return
+        }
+        switch segment.content {
+        case .node(let node):
+            navigator.peek(tree.displayPath(node), colorIndex: segment.colorIndex)
+        case .others(let parent, _):
+            navigator.peek(tree.displayPath(parent), colorIndex: segment.colorIndex, groupedBelow: segment.groupedBelow ?? .max)
+        case .looseFiles(let parent):
+            navigator.peek(tree.displayPath(parent), colorIndex: segment.colorIndex, looseFiles: true)
+        case .unaccounted:
+            navigator.peek(nil)
+        }
     }
 
     /// Lets a hovered file or folder be dragged to the Collector, Finder or the Trash.

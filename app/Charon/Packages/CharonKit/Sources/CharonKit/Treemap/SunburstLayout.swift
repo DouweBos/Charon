@@ -20,6 +20,8 @@ public struct SunburstSegment: Sendable, Hashable, Identifiable {
     public var isDrillable: Bool
     /// A folder on the outermost ring whose contents aren't drawn; the view marks its rim.
     public var hasHiddenChildren: Bool
+    /// For "Smaller items": entries of the parent smaller than this were folded into the segment.
+    public var groupedBelow: Int64?
 
     public var node: DiskTree.NodeID? {
         if case .node(let id) = content { return id }
@@ -85,7 +87,7 @@ public enum SunburstLayout {
             segments.append(SunburstSegment(
                 id: segments.count, content: entry.content, title: entry.title, size: entry.size, depth: depth,
                 startAngle: angle, endAngle: angle + width, colorIndex: color, isDrillable: drillable,
-                hasHiddenChildren: drillable && depth == maxDepth
+                hasHiddenChildren: drillable && depth == maxDepth, groupedBelow: nil
             ))
             if drillable, depth < maxDepth, case .node(let target) = entry.content {
                 ring(
@@ -102,7 +104,8 @@ public enum SunburstLayout {
             segments.append(SunburstSegment(
                 id: segments.count, content: .others(parent: parent, count: smallCount), title: "Smaller items",
                 size: smallBytes, depth: depth, startAngle: angle, endAngle: end, colorIndex: colorIndex ?? entries.count,
-                isDrillable: false, hasHiddenChildren: false
+                isDrillable: false, hasHiddenChildren: false,
+                groupedBelow: Int64((minimumAngle / span * Double(total)).rounded(.up))
             ))
         }
     }
