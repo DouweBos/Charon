@@ -20,8 +20,16 @@ struct ScanState {
     var isFromCache = false
     /// Scanned by the root helper, so restricted folders are included.
     var isAdministrator = false
+    /// What the scan is expected to find: the last scan's total, else the disk's used space. Nil when unknown.
+    var expectedBytes: Int64?
 
     var isScanning: Bool { phase == .scanning }
+
+    /// Share of `expectedBytes` scanned so far. Held just short of done, since the estimate is only an estimate.
+    var fraction: Double? {
+        guard let expectedBytes, expectedBytes > 0 else { return nil }
+        return min(Double(progress.bytesScanned) / Double(expectedBytes), 0.99)
+    }
 }
 
 @MainActor
@@ -84,10 +92,11 @@ final class AnalyzeViewModel {
         let id = target.id
         let root = target.root
         let displayRoot = target.displayRoot
+        let lastTotal = scans[id]?.tree.map { $0.size(DiskTree.root) }
         if let finished = scans[id], finished.phase == .complete, let tree = finished.tree {
             baselines[id] = (tree, finished.scannedAt ?? Date())
         }
-        scans[id] = ScanState()
+        scans[id] = ScanState(expectedBytes: lastTotal ?? (target.isFolder ? nil : target.volume?.usedBytes))
         Logger.scan.info("Scanning \(root.path, privacy: .public)")
 
         tasks[id] = Task { [weak self] in
@@ -129,6 +138,8 @@ final class AnalyzeViewModel {
         var state = previous ?? ScanState()
         state.phase = .scanning
         state.isAdministrator = true
+        state.expectedBytes = previous?.tree.map { $0.size(DiskTree.root) } ?? target.volume?.usedBytes
+        state.progress = ScanProgress()
         scans[id] = state
 
         tasks[id] = Task { [weak self] in

@@ -26,7 +26,8 @@ struct TreemapPanel: View {
             if let scan = model.currentScan, scan.isScanning {
                 ProgressStrip(
                     title: "Scanning \(model.currentTarget?.name ?? "disk")\(scan.isAdministrator ? " as administrator" : "")",
-                    detail: "\(scan.progress.filesScanned.formatted()) files · \(ByteSize.format(scan.progress.bytesScanned))",
+                    detail: scanDetail(scan),
+                    fraction: scan.fraction,
                     onCancel: { model.currentTarget.map { model.analyze.cancel($0.id) } }
                 )
             }
@@ -51,6 +52,14 @@ struct TreemapPanel: View {
                 }
             }
         }
+    }
+
+    private func scanDetail(_ scan: ScanState) -> String {
+        let files = "\(scan.progress.filesScanned.formatted()) files"
+        guard let expected = scan.expectedBytes, let fraction = scan.fraction else {
+            return "\(files) · \(ByteSize.format(scan.progress.bytesScanned))"
+        }
+        return "\(files) · \(ByteSize.format(scan.progress.bytesScanned)) of about \(ByteSize.format(expected)) · \(Int(fraction * 100))%"
     }
 }
 
