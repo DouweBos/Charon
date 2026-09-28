@@ -18,6 +18,8 @@ public struct SunburstSegment: Sendable, Hashable, Identifiable {
     /// Index of the ring-1 ancestor, so a branch keeps one hue.
     public var colorIndex: Int
     public var isDrillable: Bool
+    /// A folder on the outermost ring whose contents aren't drawn; the view marks its rim.
+    public var hasHiddenChildren: Bool
 
     public var node: DiskTree.NodeID? {
         if case .node(let id) = content { return id }
@@ -26,6 +28,17 @@ public struct SunburstSegment: Sendable, Hashable, Identifiable {
 }
 
 public enum SunburstLayout {
+
+    /// Inner and outer radius of each ring. Rings get thinner outward, as each level holds less.
+    public static func ringRadii(hole: Double, outer: Double, depth: Int) -> [(inner: Double, outer: Double)] {
+        let weights = (0..<depth).map { 1 / (1 + 0.22 * Double($0)) }
+        let scale = (outer - hole) / weights.reduce(0, +)
+        var radius = hole
+        return weights.map { weight in
+            defer { radius += weight * scale }
+            return (radius, radius + weight * scale)
+        }
+    }
 
     /// Segments narrower than `minimumAngle` fold into one "smaller items" segment per parent.
     public static func segments(
@@ -71,7 +84,8 @@ public enum SunburstLayout {
             let drillable = entry.nestable
             segments.append(SunburstSegment(
                 id: segments.count, content: entry.content, title: entry.title, size: entry.size, depth: depth,
-                startAngle: angle, endAngle: angle + width, colorIndex: color, isDrillable: drillable
+                startAngle: angle, endAngle: angle + width, colorIndex: color, isDrillable: drillable,
+                hasHiddenChildren: drillable && depth == maxDepth
             ))
             if drillable, depth < maxDepth, case .node(let target) = entry.content {
                 ring(
@@ -88,7 +102,7 @@ public enum SunburstLayout {
             segments.append(SunburstSegment(
                 id: segments.count, content: .others(parent: parent, count: smallCount), title: "Smaller items",
                 size: smallBytes, depth: depth, startAngle: angle, endAngle: end, colorIndex: colorIndex ?? entries.count,
-                isDrillable: false
+                isDrillable: false, hasHiddenChildren: false
             ))
         }
     }

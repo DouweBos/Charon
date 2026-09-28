@@ -36,12 +36,20 @@ struct SunburstView: View {
     private struct Geometry {
         var center: CGPoint
         var hole: CGFloat
-        var ring: CGFloat
+        var rings: [(inner: Double, outer: Double)]
 
         func radii(_ depth: Int) -> (inner: CGFloat, outer: CGFloat) {
-            (hole + CGFloat(depth - 1) * ring, hole + CGFloat(depth) * ring - 1)
+            let ring = rings[depth - 1]
+            return (CGFloat(ring.inner), CGFloat(ring.outer) - 1)
+        }
+
+        func depth(at radius: CGFloat) -> Int? {
+            rings.firstIndex { Double(radius) >= $0.inner && Double(radius) < $0.outer }.map { $0 + 1 }
         }
     }
+
+    /// Room outside the last ring for the "more inside" rim.
+    private let rimSpace: CGFloat = 7
 
     var body: some View {
         GeometryReader { proxy in
@@ -51,9 +59,10 @@ struct SunburstView: View {
             }
             let area = CGSize(width: proxy.size.width, height: max(proxy.size.height - captionHeight - Theme.Spacing.xs, 0))
             let radius = max(min(area.width, area.height) / 2 - Theme.Spacing.sm, 10)
+            let hole = radius * 0.2
             let geometry = Geometry(
-                center: CGPoint(x: area.width / 2, y: area.height / 2),
-                hole: radius * 0.2, ring: radius * 0.8 / CGFloat(maxDepth)
+                center: CGPoint(x: area.width / 2, y: area.height / 2), hole: hole,
+                rings: SunburstLayout.ringRadii(hole: Double(hole), outer: Double(radius - rimSpace), depth: maxDepth)
             )
             let hovered = hoveredID.flatMap { id in segments.first { $0.id == id } }
 
@@ -76,7 +85,10 @@ struct SunburstView: View {
                         .allowsHitTesting(false)
                 }
                 .frame(width: area.width, height: area.height)
+                .id(focus)
+                .transition(.scale(scale: 0.9).combined(with: .opacity))
                 .contentShape(Rectangle())
+                .onDrag { dragProvider(for: hovered) }
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let point):
@@ -149,17 +161,30 @@ struct SunburstView: View {
         }
         context.fill(path, with: .color(Theme.sunburstFill(colorIndex: segment.colorIndex, depth: segment.depth, isNeutral: isNeutral)))
         context.stroke(path, with: .color(Theme.background), lineWidth: 1)
+        if segment.hasHiddenChildren {
+            // A thin band outside the last ring says there's more inside, like DaisyDisk.
+            let outer = geometry.radii(segment.depth).outer
+            var rim = Path()
+            rim.addArc(center: geometry.center, radius: outer + 4, startAngle: .radians(segment.startAngle - .pi / 2),
+                       endAngle: .radians(segment.endAngle - .pi / 2), clockwise: false)
+            context.stroke(rim, with: .color(Theme.sunburstFill(colorIndex: segment.colorIndex, depth: segment.depth, isNeutral: false)),
+                           lineWidth: 3)
+        }
     }
 
     private func hit(_ point: CGPoint, segments: [SunburstSegment], geometry: Geometry) -> SunburstSegment? {
         let dx = point.x - geometry.center.x, dy = point.y - geometry.center.y
         let radius = (dx * dx + dy * dy).squareRoot()
-        guard radius >= geometry.hole else { return nil }
-        let depth = Int((radius - geometry.hole) / geometry.ring) + 1
-        guard depth <= maxDepth else { return nil }
+        guard let depth = geometry.depth(at: radius) else { return nil }
         // Clockwise from 12 o'clock, in screen coordinates (y down).
         let angle = atan2(Double(dx), Double(-dy))
         return SunburstLayout.hitTest(segments, angle: angle, depth: depth)
+    }
+
+    /// Lets a hovered file or folder be dragged to the Collector, Finder or the Trash.
+    private func dragProvider(for segment: SunburstSegment?) -> NSItemProvider {
+        guard let node = segment?.node else { return NSItemProvider() }
+        return NSItemProvider(object: URL(fileURLWithPath: tree.realPath(node)) as NSURL)
     }
 
     private func distance(_ first: CGPoint, _ second: CGPoint) -> CGFloat {

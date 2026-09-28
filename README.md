@@ -8,7 +8,8 @@ A native macOS disk analyzer built with SwiftUI. It shows where the space on any
 - Scan as Administrator: a one-off root scan (password prompt, no installed helper) that sizes folders owned by macOS and other users
 - Scans are remembered, so relaunching opens on the last result
 - Nested, drillable treemap with a matching sidebar and back/forward history
-- Rings: a sunburst view showing six levels at once; click a ring to open it, the center to go up
+- Rings: a sunburst view showing six levels at once, thinning outward, with a rim where there's more inside; click a ring to open it, the center to go up
+- Drag any tile or ring segment to the Collector (always at the bottom of Analyze), Finder or the Trash
 - Clean: sizes Xcode, simulator, package-manager and app caches, logs and leftovers, and moves them to the Trash
 - Uninstall: apps by size and last use, with their leftovers in ~/Library
 - Optimize: background launch agents and daemons, flagging ones whose app is gone

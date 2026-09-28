@@ -48,4 +48,16 @@ struct SunburstLayoutTests {
         let colors = Set(segments.filter { $0.depth == 2 }.map(\.colorIndex))
         #expect(colors.count == 2)
     }
+
+    @Test func ringsThinOutwardAndFillTheRadius() {
+        let radii = SunburstLayout.ringRadii(hole: 20, outer: 200, depth: 6)
+        #expect(radii.count == 6)
+        #expect(abs(radii[0].inner - 20) < 1e-9 && abs(radii[5].outer - 200) < 1e-9)
+        #expect((radii[0].outer - radii[0].inner) > (radii[5].outer - radii[5].inner))
+    }
+
+    @Test func outermostFoldersKnowTheyHaveMore() {
+        let segments = SunburstLayout.segments(for: tree(), focus: DiskTree.root, maxDepth: 1, minimumAngle: 0.05)
+        #expect(segments.first { $0.title == "Users/me" }?.hasHiddenChildren == false)
+    }
 }

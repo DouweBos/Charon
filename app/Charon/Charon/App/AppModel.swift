@@ -205,6 +205,18 @@ final class AppModel {
         collector.add(path: path, bytes: bytes, isDirectory: isDirectory, offloadedPaths: Set(offload.records.map(\.originalPath)))
     }
 
+    /// Items dragged onto the Collector, sized from the current scan when it has them.
+    func collectDropped(_ urls: [URL]) {
+        for url in urls {
+            let path = OffloadPreflight.userFacingPath(url.standardizedFileURL.path)
+            let tree = currentScan?.tree
+            let node = tree?.node(atDisplayPath: path)
+            var isDirectory: ObjCBool = false
+            FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
+            collect(path: path, bytes: node.flatMap { tree?.size($0) } ?? 0, isDirectory: isDirectory.boolValue)
+        }
+    }
+
     func trashCollected() {
         collector.confirmTrash(offloadedPaths: Set(offload.records.map(\.originalPath)))
     }

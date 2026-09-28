@@ -37,6 +37,7 @@ struct TreemapPanel: View {
                     DuplicatesView()
                 } else if let tree = model.currentScan?.tree, navigator.analyzeMode == .sunburst {
                     SunburstView(tree: tree, focus: model.focusNode, unaccountedBytes: model.unaccountedBytes)
+                        .animation(.easeOut(duration: 0.25), value: model.focusNode)
                 } else if let tree = model.currentScan?.tree, navigator.analyzeMode == .files {
                     LargestFilesView(tree: tree, focus: model.focusNode)
                 } else if let tree = model.currentScan?.tree {
@@ -104,6 +105,10 @@ struct TreemapView: View {
                         }
                     }
                     .allowsHitTesting(false)
+                }
+                .onDrag {
+                    guard let node = hovered?.node else { return NSItemProvider() }
+                    return NSItemProvider(object: URL(fileURLWithPath: tree.realPath(node)) as NSURL)
                 }
                 .onContinuousHover { phase in
                     switch phase {
