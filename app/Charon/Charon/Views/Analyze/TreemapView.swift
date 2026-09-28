@@ -6,6 +6,10 @@
 import CharonKit
 import SwiftUI
 
+private extension CGSize {
+    static let unbounded = CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+}
+
 struct TreemapPanel: View {
     @Environment(AppModel.self) private var model
     @Environment(AppNavigator.self) private var navigator
@@ -160,14 +164,21 @@ struct TreemapView: View {
     }
 
     private func drawHeader(_ tile: TreemapTile, in context: inout GraphicsContext) {
-        let title = Text(tile.title).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.tileHeaderText)
-        let size = Text(ByteSize.format(tile.size)).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.textSecondary)
-        let text = Text("\(title)  \(size)")
-        let resolved = context.resolve(text)
+        let available = tile.rect.width - 16
+        let size = context.resolve(
+            Text(ByteSize.format(tile.size)).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.textSecondary)
+        )
+        let sizeWidth = size.measure(in: .unbounded).width
+        let showsSize = available > sizeWidth + 60
+        guard let title = fitted(tile.title, width: available - (showsSize ? sizeWidth + 8 : 0), in: context, text: {
+            Text($0).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.tileHeaderText)
+        }) else { return }
         let origin = CGPoint(x: tile.rect.minX + 8, y: tile.rect.minY + 4)
-        var clipped = context
-        clipped.clip(to: Path(CGRect(x: tile.rect.minX, y: tile.rect.minY, width: tile.rect.width - 6, height: 20)))
-        clipped.draw(resolved, at: origin, anchor: .topLeading)
+        context.draw(title, at: origin, anchor: .topLeading)
+        if showsSize {
+            let titleWidth = title.measure(in: .unbounded).width
+            context.draw(size, at: CGPoint(x: origin.x + titleWidth + 8, y: origin.y + 1), anchor: .topLeading)
+        }
     }
 
     private func drawLabel(_ tile: TreemapTile, in context: inout GraphicsContext) {
@@ -176,24 +187,49 @@ struct TreemapView: View {
         let large = rect.width > 220 && rect.height > 120
         let symbol = tile.node.map { tree.isDirectory($0) ? "folder" : "doc" } ?? (tile.content == .unaccounted ? "gearshape" : "doc.on.doc")
         let titleSize: CGFloat = large ? 20 : 12
-        let title = context.resolve(
-            Text("\(Image(systemName: symbol)) \(tile.title)")
-                .font(.system(size: titleSize, weight: .medium))
-                .foregroundStyle(Theme.textOnTile)
-        )
+        let available = rect.width - 12
+        // Prefer icon + name; drop the icon before cutting the name short.
+        let title = fitted(tile.title, width: available, in: context, minimumCharacters: 6) {
+            Text("\(Image(systemName: symbol)) \($0)").font(.system(size: titleSize, weight: .medium)).foregroundStyle(Theme.textOnTile)
+        } ?? fitted(tile.title, width: available, in: context) {
+            Text($0).font(.system(size: titleSize, weight: .medium)).foregroundStyle(Theme.textOnTile)
+        }
+        guard let title else { return }
         let size = context.resolve(
             Text(ByteSize.format(tile.size))
                 .font(.system(size: large ? 15 : 11, design: .monospaced))
                 .foregroundStyle(Theme.tileSecondaryText)
         )
-        var clipped = context
-        clipped.clip(to: Path(rect.insetBy(dx: 4, dy: 2)))
-        let showsSize = rect.height > (large ? 70 : 40)
+        let showsSize = rect.height > (large ? 70 : 40) && size.measure(in: .unbounded).width <= available
         let center = CGPoint(x: rect.midX, y: rect.midY - (showsSize ? titleSize * 0.6 : 0))
-        clipped.draw(title, at: center, anchor: .center)
+        context.draw(title, at: center, anchor: .center)
         if showsSize {
-            clipped.draw(size, at: CGPoint(x: rect.midX, y: center.y + titleSize + 4), anchor: .center)
+            context.draw(size, at: CGPoint(x: rect.midX, y: center.y + titleSize + 4), anchor: .center)
         }
+    }
+
+    /// The longest prefix of `string` (with "…") whose text fits `width`; nil if even a few characters don't.
+    private func fitted(
+        _ string: String, width: CGFloat, in context: GraphicsContext, minimumCharacters: Int = 2,
+        text: (String) -> Text
+    ) -> GraphicsContext.ResolvedText? {
+        guard width > 0 else { return nil }
+        let full = context.resolve(text(string))
+        if full.measure(in: .unbounded).width <= width { return full }
+        var low = minimumCharacters
+        var high = string.count - 1
+        var best: GraphicsContext.ResolvedText?
+        while low <= high {
+            let middle = (low + high) / 2
+            let candidate = context.resolve(text(String(string.prefix(middle)) + "…"))
+            if candidate.measure(in: .unbounded).width <= width {
+                best = candidate
+                low = middle + 1
+            } else {
+                high = middle - 1
+            }
+        }
+        return best
     }
 
     @ViewBuilder

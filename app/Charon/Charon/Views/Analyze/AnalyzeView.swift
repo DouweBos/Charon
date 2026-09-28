@@ -71,41 +71,51 @@ struct AnalyzeHeader: View {
     @Environment(AppNavigator.self) private var navigator
 
     var body: some View {
-        HStack(spacing: Theme.Spacing.md) {
-            HStack(spacing: 2) {
-                Button { navigator.goBack() } label: { Image(systemName: "chevron.left") }
-                    .disabled(!navigator.canGoBack)
-                    .accessibilityLabel("Back")
-                Button { navigator.goForward() } label: { Image(systemName: "chevron.right") }
-                    .disabled(!navigator.canGoForward)
-                    .accessibilityLabel("Forward")
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            HStack(spacing: Theme.Spacing.md) {
+                HStack(spacing: 2) {
+                    Button { navigator.goBack() } label: { Image(systemName: "chevron.left") }
+                        .disabled(!navigator.canGoBack)
+                        .accessibilityLabel("Back")
+                    Button { navigator.goForward() } label: { Image(systemName: "chevron.right") }
+                        .disabled(!navigator.canGoForward)
+                        .accessibilityLabel("Forward")
+                }
+                .buttonStyle(.borderless)
+                Breadcrumb(crumbs: crumbs) { crumb in
+                    navigator.focus(crumb.id.isEmpty ? nil : crumb.id)
+                }
+                .layoutPriority(-1)
+                Spacer(minLength: Theme.Spacing.lg)
+                Picker("View", selection: Binding(get: { navigator.analyzeMode }, set: { navigator.setAnalyzeMode($0) })) {
+                    ForEach(AnalyzeMode.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
             }
-            .buttonStyle(.borderless)
-            Breadcrumb(crumbs: crumbs) { crumb in
-                navigator.focus(crumb.id.isEmpty ? nil : crumb.id)
-            }
-            Spacer()
-            Picker("View", selection: Binding(get: { navigator.analyzeMode }, set: { navigator.setAnalyzeMode($0) })) {
-                ForEach(AnalyzeMode.allCases, id: \.self) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            if let scan = model.currentScan, !scan.isScanning, let scannedAt = scan.scannedAt {
-                Text("Scanned \(Text(scannedAt, style: .relative)) ago")
+            .frame(height: 28)
+
+            HStack(spacing: Theme.Spacing.md) {
+                if let volume = model.currentVolume {
+                    UsageBar(used: volume.usedBytes, total: volume.totalBytes, width: 180)
+                }
+                Spacer(minLength: Theme.Spacing.lg)
+                if let scan = model.currentScan, !scan.isScanning, let scannedAt = scan.scannedAt {
+                    TimelineView(.periodic(from: .now, by: 60)) { _ in
+                        Text("Scanned \(scannedAt.formatted(.relative(presentation: .named)))")
+                    }
                     .font(.monoCaption)
                     .foregroundStyle(Theme.textSecondary)
                     .help(scannedAt.formatted(date: .abbreviated, time: .shortened))
-            }
-            if let volume = model.currentVolume {
-                UsageBar(used: volume.usedBytes, total: volume.totalBytes)
-            }
-            Button { model.rescanCurrent() } label: { Image(systemName: "arrow.clockwise") }
+                }
+                Button { model.rescanCurrent() } label: {
+                    Label("Rescan", systemImage: "arrow.clockwise").font(.system(size: 12))
+                }
                 .buttonStyle(.borderless)
-                .help("Rescan")
-                .accessibilityLabel("Rescan")
+                .help("Scan this disk again (⌘R)")
+            }
         }
-        .frame(height: 28)
     }
 
     private var crumbs: [Breadcrumb.Crumb] {
