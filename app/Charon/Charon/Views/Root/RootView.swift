@@ -54,6 +54,7 @@ struct RootView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.recheckFullDiskAccess()
+            model.refreshTrash()
             Task { await offload.refresh() }
         }
     }

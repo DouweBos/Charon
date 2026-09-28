@@ -47,7 +47,7 @@ struct AnalyzeSidebar: View {
             .frame(maxHeight: listHeight)
             .onScrollGeometryChange(for: CGFloat.self, of: \.contentSize.height) { listHeight = max($1, 1) }
             if let volume = model.currentTarget?.isFolder == false ? model.currentVolume : nil {
-                freeSpace(volume)
+                SidebarFooter(volume: volume)
             }
             Spacer(minLength: 0)
         }
@@ -91,24 +91,6 @@ struct AnalyzeSidebar: View {
         }
         folders.append(PopUpMenu.Item(title: "Scan Folder…", symbol: "folder.badge.plus") { model.chooseFolderToScan() })
         PopUpMenu.show([PopUpMenu.Section(title: "Disks", items: disks), PopUpMenu.Section(title: "Folders", items: folders)])
-    }
-
-    /// Like DaisyDisk's legend footer: what's free now, and what macOS can free on demand.
-    private func freeSpace(_ volume: VolumeInfo) -> some View {
-        VStack(spacing: Theme.Spacing.xs) {
-            HStack {
-                Label("Free space", systemImage: "circle").foregroundStyle(Theme.textSecondary)
-                Spacer()
-                Text(ByteSize.format(max(volume.availableBytes - volume.purgeableBytes, 0))).font(.monoCaption)
-            }
-            HStack {
-                Label("Free + purgeable", systemImage: "circle.dashed").foregroundStyle(Theme.textSecondary)
-                Spacer()
-                Text(ByteSize.format(volume.availableBytes)).font(.monoCaption)
-            }
-        }
-        .font(.system(size: 12))
-        .padding(.horizontal, Theme.Spacing.md)
     }
 
     private var title: String {

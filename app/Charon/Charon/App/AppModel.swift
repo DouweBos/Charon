@@ -25,6 +25,9 @@ final class AppModel {
     private(set) var hasFullDiskAccess = SystemIntegration.hasFullDiskAccess
     private(set) var dismissedAccessBanner = false
     private(set) var isConfirmingEmptyTrash = false
+    /// Size of the user's Trash, or nil until measured (or when it can't be read without Full Disk Access).
+    private(set) var trashBytes: Int64?
+    @ObservationIgnored private var trashTask: Task<Void, Never>?
     /// Folders every scan skips, as user-facing paths.
     private(set) var excludedPaths: [String] = UserDefaults.standard.stringArray(forKey: AppSettings.excludedPaths) ?? []
 
@@ -40,6 +43,7 @@ final class AppModel {
         }
         Task { await offload.reconcile() }
         HistoryGestures.install(back: { [weak self] in self?.goBack() }, forward: { [weak self] in self?.goForward() })
+        refreshTrash()
         MonitorLoginItem.enableOnFirstLaunch()
         if !hasFullDiskAccess, !UserDefaults.standard.bool(forKey: AppSettings.accessPromptShown) {
             UserDefaults.standard.set(true, forKey: AppSettings.accessPromptShown)
@@ -260,6 +264,17 @@ final class AppModel {
         collector.confirmTrash(offloadedPaths: Set(offload.records.map(\.originalPath)))
     }
 
+    func refreshTrash() {
+        trashTask?.cancel()
+        trashTask = Task {
+            let url = URL(fileURLWithPath: SystemIntegration.trashPath)
+            let readable = (try? FileManager.default.contentsOfDirectory(atPath: url.path)) != nil
+            let bytes = readable ? try? await CleanMeasurer.size(of: url) : nil
+            guard !Task.isCancelled else { return }
+            trashBytes = bytes
+        }
+    }
+
     func requestEmptyTrash() {
         isConfirmingEmptyTrash = true
     }
@@ -281,12 +296,14 @@ final class AppModel {
             for child in tree.children(trash) { analyze.detach(displayPath: tree.displayPath(child)) }
         }
         volumes.refresh()
+        refreshTrash()
         if clean.hasMeasured { clean.measure() }
     }
 
     private func trashed(_ paths: [String]) {
         for path in paths { analyze.detach(displayPath: path) }
         volumes.refresh()
+        refreshTrash()
     }
 
     private func offloaded(_ path: String) {

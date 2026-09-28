@@ -54,7 +54,7 @@ public struct CleanMeasurer: Sendable {
         return items.filter { $0.bytes > 0 }.sorted { $0.bytes > $1.bytes }
     }
 
-    static func size(of url: URL) async throws -> Int64 {
+    public static func size(of url: URL) async throws -> Int64 {
         var info = stat()
         guard lstat(url.path, &info) == 0 else { return 0 }
         guard info.st_mode & S_IFMT == S_IFDIR else { return Int64(info.st_blocks) * 512 }
