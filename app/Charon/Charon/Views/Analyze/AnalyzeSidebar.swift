@@ -134,6 +134,10 @@ struct AnalyzeSidebar: View {
             showsChevron: entry.drillable || entry.kind == .unaccounted
         )
         .onTapGesture { model.activate(entry) }
+        .fileDrag(
+            path: entry.isNode ? entry.path : nil, title: entry.title, size: entry.size,
+            isDirectory: entry.isDirectory, tint: Theme.treemapColor(entry.colorIndex)
+        )
         .onHover { hovering in navigator.hover(hovering ? entry.path : nil) }
         .contextMenu {
             if entry.isNode {

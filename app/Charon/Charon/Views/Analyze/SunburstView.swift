@@ -98,7 +98,11 @@ struct SunburstView: View {
                 .id(focus)
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
                 .contentShape(Rectangle())
-                .onDrag { dragProvider(for: hovered) }
+                .fileDrag(
+                    path: hovered?.node.map(tree.realPath), title: hovered?.title ?? "", size: hovered?.size ?? 0,
+                    isDirectory: hovered?.node.map(tree.isDirectory) ?? true,
+                    tint: hovered.map { Theme.treemapColor($0.colorIndex) } ?? Theme.accent
+                )
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let point):
@@ -220,11 +224,6 @@ struct SunburstView: View {
     }
 
     /// Lets a hovered file or folder be dragged to the Collector, Finder or the Trash.
-    private func dragProvider(for segment: SunburstSegment?) -> NSItemProvider {
-        guard let node = segment?.node else { return NSItemProvider() }
-        return NSItemProvider(object: URL(fileURLWithPath: tree.realPath(node)) as NSURL)
-    }
-
     private func distance(_ first: CGPoint, _ second: CGPoint) -> CGFloat {
         ((first.x - second.x) * (first.x - second.x) + (first.y - second.y) * (first.y - second.y)).squareRoot()
     }

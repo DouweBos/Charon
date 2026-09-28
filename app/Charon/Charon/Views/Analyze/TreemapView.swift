@@ -106,10 +106,11 @@ struct TreemapView: View {
                     }
                     .allowsHitTesting(false)
                 }
-                .onDrag {
-                    guard let node = hovered?.node else { return NSItemProvider() }
-                    return NSItemProvider(object: URL(fileURLWithPath: tree.realPath(node)) as NSURL)
-                }
+                .fileDrag(
+                    path: hovered?.node.map(tree.realPath), title: hovered?.title ?? "", size: hovered?.size ?? 0,
+                    isDirectory: hovered?.node.map(tree.isDirectory) ?? true,
+                    tint: hovered.map { Theme.treemapColor($0.colorIndex) } ?? Theme.accent
+                )
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let point):

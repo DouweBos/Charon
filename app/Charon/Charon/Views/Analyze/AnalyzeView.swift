@@ -36,7 +36,8 @@ struct AnalyzeView: View {
             set: { if $0 == nil { navigator.closePreview() } }
         ))
         .dropDestination(for: URL.self) { urls, _ in
-            guard let url = urls.first else { return false }
+            // A folder dragged out of this scan and released over it again isn't a request to scan it.
+            guard let url = urls.first, !model.isInCurrentScan(url) else { return false }
             model.scanFolder(url)
             return true
         }

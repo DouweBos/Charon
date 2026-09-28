@@ -198,6 +198,10 @@ final class AppModel {
         startCurrentScan()
     }
 
+    func isInCurrentScan(_ url: URL) -> Bool {
+        currentScan?.tree?.node(atDisplayPath: OffloadPreflight.userFacingPath(url.standardizedFileURL.path)) != nil
+    }
+
     func chooseFolderToScan() {
         if let url = SystemIntegration.chooseDirectory(message: "Choose a folder to scan.") {
             scanFolder(url)
