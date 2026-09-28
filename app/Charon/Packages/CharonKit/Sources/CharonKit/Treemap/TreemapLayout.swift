@@ -48,11 +48,15 @@ public struct TreemapConfiguration: Sendable, Hashable {
     public var headerHeight: CGFloat
     public var minNestedSize: CGSize
     public var maxItemsPerLevel: Int
+    /// Tiles smaller than this can't show a name, so they're merged into one "Other" tile.
+    public var minLabeledSize: CGSize
 
     public init(
         maxDepth: Int = 3, gap: CGFloat = 4, headerHeight: CGFloat = 22,
-        minNestedSize: CGSize = CGSize(width: 100, height: 70), maxItemsPerLevel: Int = 40
+        minNestedSize: CGSize = CGSize(width: 100, height: 70), maxItemsPerLevel: Int = 40,
+        minLabeledSize: CGSize = CGSize(width: 56, height: 30)
     ) {
+        self.minLabeledSize = minLabeledSize
         self.maxDepth = maxDepth
         self.gap = gap
         self.headerHeight = headerHeight
@@ -107,7 +111,7 @@ public enum TreemapLayout {
             let tail = items[limit...]
             let tailSize = tail.reduce(Int64(0)) { $0 + $1.size }
             items = Array(items[..<limit])
-            items.append(Item(content: .others(parent: parent, count: tail.count), title: "\(tail.count) more", size: tailSize, nestable: false))
+            items.append(Item(content: .others(parent: parent, count: tail.count), title: "Other", size: tailSize, nestable: false))
         }
         let loose = tree.looseFilesSize(parent)
         if loose > 0 {
@@ -119,18 +123,44 @@ public enum TreemapLayout {
         return items.sorted { $0.size > $1.size }
     }
 
+    /// Folds tiles too small to label into a single "Other" tile, then lays the level out again.
+    private static func mergingUnlabeled(
+        _ items: [Item], rects: [CGRect], parent: DiskTree.NodeID, in rect: CGRect, configuration: TreemapConfiguration
+    ) -> ([Item], [CGRect]) {
+        let minimum = configuration.minLabeledSize
+        let small = Set(items.indices.filter { index in
+            let tile = rects[index].insetBy(dx: configuration.gap / 2, dy: configuration.gap / 2)
+            return items[index].content != .unaccounted && (tile.width < minimum.width || tile.height < minimum.height)
+        })
+        guard small.count >= 2 else { return (items, rects) }
+
+        var kept = items.indices.filter { !small.contains($0) }.map { items[$0] }
+        let merged = small.map { items[$0] }
+        let count = merged.reduce(0) { total, item in
+            if case .others(_, let inner) = item.content { return total + inner }
+            return total + 1
+        }
+        kept.append(Item(
+            content: .others(parent: parent, count: count), title: "Other",
+            size: merged.reduce(Int64(0)) { $0 + $1.size }, nestable: false
+        ))
+        kept.sort { $0.size > $1.size }
+        return (kept, SquarifiedLayout.layout(weights: kept.map { Double($0.size) }, in: rect))
+    }
+
     // swiftlint:disable:next function_parameter_count
     private static func layoutLevel(
         tree: DiskTree, parent: DiskTree.NodeID, rect: CGRect, depth: Int, budget: Int, colorIndex: Int?,
         configuration: TreemapConfiguration, unaccounted: Int64, tiles: inout [TreemapTile]
     ) {
-        let levelItems = items(tree: tree, parent: parent, unaccounted: unaccounted, limit: configuration.maxItemsPerLevel)
+        var levelItems = items(tree: tree, parent: parent, unaccounted: unaccounted, limit: configuration.maxItemsPerLevel)
+        var rects = SquarifiedLayout.layout(weights: levelItems.map { Double($0.size) }, in: rect)
+        (levelItems, rects) = mergingUnlabeled(levelItems, rects: rects, parent: parent, in: rect, configuration: configuration)
         // A level where one folder holds nearly everything ("Users" → "douwe") tells you nothing new,
         // so it doesn't use up a level of the depth budget.
         let total = levelItems.reduce(Int64(0)) { $0 + $1.size }
         let dominated = (levelItems.first?.size ?? 0) * 100 >= total * 85
         let spent = budget + (dominated ? 0 : 1)
-        let rects = SquarifiedLayout.layout(weights: levelItems.map { Double($0.size) }, in: rect)
         let half = configuration.gap / 2
 
         for (index, (item, itemRect)) in zip(levelItems, rects).enumerated() {

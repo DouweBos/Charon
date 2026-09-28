@@ -110,9 +110,16 @@ struct TreemapView: View {
     }
 
     private func open(_ tile: TreemapTile) {
-        if tile.content == .unaccounted {
+        switch tile.content {
+        case .unaccounted:
             navigator.present(.hiddenSpace)
             return
+        case .others(let parent, _), .looseFiles(let parent):
+            // The folder holding these small items shows them at full size.
+            if parent != focus { navigator.focus(tree.displayPath(parent)) }
+            return
+        case .node:
+            break
         }
         guard let node = tile.node else { return }
         if tree.isDirectory(node), !tree.children(node).isEmpty {
@@ -130,7 +137,9 @@ struct TreemapView: View {
             let change = model.currentComparison?.delta(atDisplayPath: tree.displayPath(node)).map(changeText) ?? ""
             return "\(tree.displayPath(node)) · \(ByteSize.format(tile.size))\(items)\(change)"
         case .looseFiles: return "Files directly in this folder · \(ByteSize.format(tile.size))"
-        case .others(_, let count): return "\(count) smaller items · \(ByteSize.format(tile.size))"
+        case .others(let parent, let count):
+            let hint = parent == focus ? "see Largest Files or the sidebar" : "click to open \(tree.name(parent))"
+            return "\(count) smaller items · \(ByteSize.format(tile.size)) · \(hint)"
         case .unaccounted: return "macOS, snapshots and space the scan can't see · \(ByteSize.format(tile.size)) · click for a breakdown"
         }
     }
@@ -187,7 +196,13 @@ struct TreemapView: View {
         let rect = tile.rect
         guard rect.width > 44, rect.height > 22 else { return }
         let large = rect.width > 220 && rect.height > 120
-        let symbol = tile.node.map { tree.isDirectory($0) ? "folder" : "doc" } ?? (tile.content == .unaccounted ? "gearshape" : "doc.on.doc")
+        let symbol: String
+        switch tile.content {
+        case .node(let node): symbol = tree.isDirectory(node) ? "folder" : "doc"
+        case .unaccounted: symbol = "gearshape"
+        case .others: symbol = "square.stack"
+        case .looseFiles: symbol = "doc.on.doc"
+        }
         let titleSize: CGFloat = large ? 20 : 12
         let available = rect.width - 20
         // Prefer icon + name; drop the icon before cutting the name short.

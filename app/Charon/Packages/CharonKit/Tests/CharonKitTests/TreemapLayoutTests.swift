@@ -119,4 +119,22 @@ struct TreemapLayoutTests {
         #expect(tiles.contains { $0.title == "Movies" })
         #expect(tiles.contains { $0.title == "Code" })
     }
+
+    @Test func tinyTilesMergeIntoOther() {
+        var tree = DiskTree(rootPath: "/data", displayRootPath: "/")
+        let big = tree.addNode(name: "Big", parent: DiskTree.root, kind: .directory)
+        tree.accumulate(into: big, size: 10_000, privateSize: 0, items: 1)
+        for index in 0..<30 {
+            let small = tree.addNode(name: "s\(index)", parent: DiskTree.root, kind: .directory)
+            tree.accumulate(into: small, size: 10, privateSize: 0, items: 1)
+        }
+        let tiles = TreemapLayout.tiles(
+            for: tree, focus: DiskTree.root, in: CGRect(x: 0, y: 0, width: 400, height: 300),
+            configuration: TreemapConfiguration(maxDepth: 1)
+        )
+        let other = tiles.first { if case .others = $0.content { true } else { false } }
+        #expect(other?.title == "Other")
+        if case .others(_, let count)? = other?.content { #expect(count == 30) }
+        #expect(tiles.count == 2)
+    }
 }
