@@ -38,6 +38,15 @@ struct RootView: View {
             case .hiddenSpace: HiddenSpaceSheet()
             }
         }
+        .confirmationDialog(
+            "Empty the Trash?",
+            isPresented: Binding(get: { model.isConfirmingEmptyTrash }, set: { if !$0 { model.cancelEmptyTrash() } })
+        ) {
+            Button("Empty Trash", role: .destructive) { model.confirmEmptyTrash() }
+            Button("Cancel", role: .cancel) { model.cancelEmptyTrash() }
+        } message: {
+            Text("Everything in the Trash is deleted permanently. This can't be undone.")
+        }
         .alert("Charon", isPresented: Binding(get: { offload.alertMessage != nil }, set: { if !$0 { offload.dismissAlert() } })) {
             Button("OK") { offload.dismissAlert() }
         } message: {

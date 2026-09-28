@@ -65,6 +65,7 @@ struct CleanView: View {
 }
 
 struct CleanRowView: View {
+    @Environment(AppModel.self) private var model
     @Environment(CleanViewModel.self) private var clean
     let row: CleanViewModel.Row
     @State private var isExpanded = false
@@ -97,7 +98,7 @@ struct CleanRowView: View {
                 Spacer()
                 size
                 if row.category.mode == .emptyTrash {
-                    Button("Empty Trash…") { clean.emptyTrash() }.disabled(row.bytes == 0)
+                    Button("Empty Trash…") { model.requestEmptyTrash() }.disabled(row.bytes == 0)
                 }
                 if let items = row.items, !items.isEmpty {
                     Button { isExpanded.toggle() } label: {

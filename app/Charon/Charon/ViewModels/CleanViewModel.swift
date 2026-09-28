@@ -131,15 +131,8 @@ final class CleanViewModel {
         }
     }
 
-    /// Finder shows its own confirmation, so nothing is deleted without the user agreeing there too.
-    func emptyTrash() {
-        let script = NSAppleScript(source: "tell application \"Finder\" to empty trash")
-        var error: NSDictionary?
-        script?.executeAndReturnError(&error)
-        if let error {
-            message = "Finder couldn't empty the Trash: \(error[NSAppleScript.errorMessage] as? String ?? "unknown error")"
-        }
-        measure()
+    func showMessage(_ text: String) {
+        message = text
     }
 
     private func measureWorktrees(_ category: CleanCategory, repositories: [String]?) async {

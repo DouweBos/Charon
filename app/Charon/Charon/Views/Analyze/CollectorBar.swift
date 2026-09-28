@@ -22,6 +22,9 @@ struct CollectorBar: View {
             } else if let message = collector.message {
                 Text(message).font(.system(size: 13)).lineLimit(2)
                 Spacer()
+                if collector.canEmptyTrash {
+                    Button("Empty Trash…") { model.requestEmptyTrash() }
+                }
                 Button("OK") { collector.dismissMessage() }
             } else {
                 Text("Collector").font(.system(size: 13, weight: .semibold))

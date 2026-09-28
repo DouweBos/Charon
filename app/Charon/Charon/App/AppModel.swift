@@ -24,6 +24,7 @@ final class AppModel {
     let duplicates = DuplicatesViewModel()
     private(set) var hasFullDiskAccess = SystemIntegration.hasFullDiskAccess
     private(set) var dismissedAccessBanner = false
+    private(set) var isConfirmingEmptyTrash = false
     /// Folders every scan skips, as user-facing paths.
     private(set) var excludedPaths: [String] = UserDefaults.standard.stringArray(forKey: AppSettings.excludedPaths) ?? []
 
@@ -257,6 +258,30 @@ final class AppModel {
 
     func trashCollected() {
         collector.confirmTrash(offloadedPaths: Set(offload.records.map(\.originalPath)))
+    }
+
+    func requestEmptyTrash() {
+        isConfirmingEmptyTrash = true
+    }
+
+    func cancelEmptyTrash() {
+        isConfirmingEmptyTrash = false
+    }
+
+    func confirmEmptyTrash() {
+        isConfirmingEmptyTrash = false
+        if let error = SystemIntegration.emptyTrash() {
+            clean.showMessage("Finder couldn't empty the Trash: \(error)")
+            collector.showMessage("Finder couldn't empty the Trash: \(error)")
+            return
+        }
+        collector.trashEmptied()
+        // The scan saw the Trash's old contents; drop them so the map matches.
+        if let tree = currentScan?.tree, let trash = tree.node(atDisplayPath: SystemIntegration.trashPath) {
+            for child in tree.children(trash) { analyze.detach(displayPath: tree.displayPath(child)) }
+        }
+        volumes.refresh()
+        if clean.hasMeasured { clean.measure() }
     }
 
     private func trashed(_ paths: [String]) {

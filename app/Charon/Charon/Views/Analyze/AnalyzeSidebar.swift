@@ -167,6 +167,9 @@ struct NodeActions: View {
         if canOpen {
             Button("Open", systemImage: "arrow.down.right.and.arrow.up.left") { navigator.focus(path) }
         }
+        if path == SystemIntegration.trashPath {
+            Button("Empty Trash…", systemImage: "trash.slash") { model.requestEmptyTrash() }
+        }
         Button("Quick Look", systemImage: "eye") { navigator.togglePreview(path) }
         Button("Reveal in Finder", systemImage: "folder") { SystemIntegration.revealInFinder(path) }
         if isDirectory {

@@ -12,6 +12,18 @@ enum SystemIntegration {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
 
+    /// Asks Finder to empty the Trash; returns Finder's error message on failure.
+    static func emptyTrash() -> String? {
+        var error: NSDictionary?
+        NSAppleScript(source: "tell application \"Finder\" to empty trash")?.executeAndReturnError(&error)
+        guard let error else { return nil }
+        return error[NSAppleScript.errorMessage] as? String ?? "unknown error"
+    }
+
+    static var trashPath: String {
+        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash").path
+    }
+
     static func openFullDiskAccessSettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
             NSWorkspace.shared.open(url)

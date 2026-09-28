@@ -14,6 +14,8 @@ final class CollectorViewModel {
     private(set) var collected = CollectorSet()
     private(set) var isTrashing = false
     private(set) var message: String?
+    /// Set after a successful move to the Trash, so the bar can offer to empty it.
+    private(set) var canEmptyTrash = false
     private(set) var isConfirming = false
 
     /// Called with display paths that were moved to the Trash.
@@ -55,6 +57,17 @@ final class CollectorViewModel {
 
     func dismissMessage() {
         message = nil
+        canEmptyTrash = false
+    }
+
+    func showMessage(_ text: String) {
+        message = text
+        canEmptyTrash = false
+    }
+
+    func trashEmptied() {
+        message = "Emptied the Trash."
+        canEmptyTrash = false
     }
 
     /// Re-checks every item: something collected earlier may have been offloaded since.
@@ -82,6 +95,7 @@ final class CollectorViewModel {
             onTrashed?(trashed)
             let freed = items.filter { trashed.contains($0.path) }.reduce(Int64(0)) { $0 + $1.bytes }
             failures += refused.map { ($0.path as NSString).lastPathComponent }
+            canEmptyTrash = !trashed.isEmpty
             message = failures.isEmpty
                 ? "Moved \(ByteSize.format(freed)) to the Trash. Empty the Trash to free the space."
                 : "Couldn't move \(failures.joined(separator: ", ")) to the Trash."
