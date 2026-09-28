@@ -27,8 +27,8 @@ public struct StaleWorktree: Sendable, Hashable, Identifiable {
 }
 
 public enum GitWorktreeParser {
-    /// Parses `git worktree list --porcelain`. The first entry is the main worktree.
     // swiftlint:disable:next cyclomatic_complexity
+    /// Parses `git worktree list --porcelain`. The first entry is the main worktree.
     public static func parse(_ output: String) -> [GitWorktree] {
         var worktrees: [GitWorktree] = []
         var current: GitWorktree?
