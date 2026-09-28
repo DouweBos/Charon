@@ -51,7 +51,7 @@ Move a folder to an external drive and leave a symlink in its place. Charon copi
 
 ## Menu bar monitor
 
-A small login item that shows free space in the menu bar, warns before your disk fills up, tells you when a drive with offloaded folders disconnects, and shows which folders grew most since your last scan. It's on by default; turn it off in Settings.
+A small login item that shows free space in the menu bar, warns before your disk fills up, tells you when a drive with offloaded folders disconnects, and shows which folders grew most since your last scan; click one to open it in Charon, where you can look inside or collect it for the Trash. It's on by default; turn it off in Settings.
 
 ## Keyboard
 

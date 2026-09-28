@@ -55,15 +55,12 @@ struct MonitorMenu: View {
             if !monitor.growth.isEmpty, let since = monitor.growthSince {
                 Divider()
                 Text("Grew since \(since.formatted(date: .abbreviated, time: .omitted))").font(.caption).foregroundStyle(.secondary)
-                ForEach(monitor.growth) { item in
-                    HStack {
-                        Text((item.path as NSString).lastPathComponent).lineLimit(1)
-                        Spacer()
-                        Text("+\(ByteSize.format(item.delta))").font(.system(.body, design: .monospaced))
-                            .foregroundStyle(MonitorTheme.warning)
+                VStack(spacing: 2) {
+                    ForEach(monitor.growth) { item in
+                        GrowthRow(item: item)
                     }
-                    .help(item.path)
                 }
+                .padding(.horizontal, -6)
             }
             Divider()
             HStack {
@@ -75,5 +72,35 @@ struct MonitorMenu: View {
         }
         .padding(14)
         .frame(width: 300)
+    }
+}
+
+/// Opens the folder in Charon, where its contents show and it can be collected for the Trash.
+private struct GrowthRow: View {
+    @Environment(MonitorModel.self) private var monitor
+    let item: GrowthItem
+    @State private var isHovered = false
+
+    var body: some View {
+        Button { monitor.show(item.path) } label: {
+            HStack {
+                Text((item.path as NSString).lastPathComponent).lineLimit(1)
+                Spacer()
+                Text("+\(ByteSize.format(item.delta))").font(.system(.body, design: .monospaced))
+                    .foregroundStyle(MonitorTheme.warning)
+                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .contentShape(Rectangle())
+            .background(isHovered ? MonitorTheme.rowHover : .clear, in: RoundedRectangle(cornerRadius: 5))
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .help("Show \(item.path) in Charon")
+        .contextMenu {
+            Button("Show in Charon") { monitor.show(item.path) }
+            Button("Show in Finder") { monitor.revealInFinder(item.path) }
+        }
     }
 }

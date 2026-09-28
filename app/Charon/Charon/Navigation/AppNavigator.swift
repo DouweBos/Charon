@@ -112,6 +112,18 @@ final class AppNavigator {
         push(next)
     }
 
+    /// Shows `path` selected inside its parent on `targetID`, in one history entry.
+    func reveal(_ path: String, in targetID: String) {
+        var next = location
+        next.tab = .analyze
+        next.targetID = targetID
+        let parent = (path as NSString).deletingLastPathComponent
+        next.focusPath = parent == "/" ? nil : parent
+        if next.analyzeMode != .sunburst { next.analyzeMode = .map }
+        push(next)
+        selectedPath = path
+    }
+
     func setAnalyzeMode(_ mode: AnalyzeMode) {
         var next = location
         next.tab = .analyze

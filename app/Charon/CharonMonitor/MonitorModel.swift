@@ -113,14 +113,27 @@ final class MonitorModel: NSObject {
         UNUserNotificationCenter.current().add(request)
     }
 
-    func openCharon() {
-        // The monitor lives at Charon.app/Contents/Library/LoginItems/; prefer that copy over any other install.
+    // The monitor lives at Charon.app/Contents/Library/LoginItems/; prefer that copy over any other install.
+    private var charonURL: URL? {
         let embedding = Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
-        let url = embedding.pathExtension == "app"
+        return embedding.pathExtension == "app"
             ? embedding : NSWorkspace.shared.urlForApplication(withBundleIdentifier: MonitorSettings.appBundleID)
-        guard let url else { return }
+    }
+
+    func openCharon() {
+        guard let url = charonURL else { return }
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+    }
+
+    /// Opens Charon with the folder selected in its scan, where it can be explored or collected for the Trash.
+    func show(_ path: String) {
+        guard let app = charonURL else { return }
+        NSWorkspace.shared.open([URL(fileURLWithPath: path)], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
+    }
+
+    func revealInFinder(_ path: String) {
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
 
     func quit() {

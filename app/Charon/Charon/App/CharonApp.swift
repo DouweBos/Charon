@@ -5,6 +5,7 @@ import SwiftUI
 
 @main
 struct CharonApp: App {
+    @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @State private var model: AppModel
 
     init() {
@@ -25,6 +26,7 @@ struct CharonApp: App {
                 .environment(model.uninstall)
                 .environment(model.optimize)
                 .environment(model.duplicates)
+                .onAppear { appDelegate.onOpen = { [model] urls in model.open(urls) } }
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1180, height: 780)

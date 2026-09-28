@@ -176,6 +176,14 @@ final class AppModel {
         navigator.selectTarget(target.id)
     }
 
+    /// Folders opened with Charon (the menu bar monitor, the Dock icon) are shown in their disk's scan.
+    func open(_ urls: [URL]) {
+        guard let url = urls.first,
+              let volume = volumes.volumeContaining(url.path) else { return }
+        navigator.reveal(OffloadPreflight.userFacingPath(url.standardizedFileURL.path), in: volume.id)
+        startCurrentScan()
+    }
+
     func chooseFolderToScan() {
         if let url = SystemIntegration.chooseDirectory(message: "Choose a folder to scan.") {
             scanFolder(url)
