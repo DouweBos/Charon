@@ -48,6 +48,12 @@ enum Theme {
         return base.opacity(max(1 - 0.14 * Double(depth - 1), 0.6))
     }
 
+    /// Inner rings solid, outer rings fading toward the background, like depth in the treemap.
+    static func sunburstFill(colorIndex: Int, depth: Int, isNeutral: Bool) -> Color {
+        let base = isNeutral ? treemapNeutral : treemapColor(colorIndex)
+        return base.opacity(max(1 - 0.12 * Double(depth - 1), 0.4))
+    }
+
     static let tileHoverStroke = textOnTile.opacity(0.85)
     static let tileSecondaryText = textOnTile.opacity(0.75)
     static let tileHeaderText = textPrimary

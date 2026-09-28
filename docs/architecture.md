@@ -11,7 +11,7 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 | Folder | Contents |
 |---|---|
 | `Scanner/` | `DiskScanner` (worker threads + `WorkQueue`), `BulkDirectoryReader` (`getattrlistbulk`), `DiskTree` (struct-of-arrays snapshot with `graft`/`detach`/CSV export), `ScanArchive`, `ScanComparison` |
-| `Treemap/` | `SquarifiedLayout` (pure), `TreemapLayout` (nested tiles, hit-testing, shared level entries) |
+| `Treemap/` | `SquarifiedLayout` (pure), `TreemapLayout` (nested tiles, hit-testing, shared level entries), `SunburstLayout` (rings) |
 | `Offload/` | `OffloadPreflight`, `OffloadEngine` (+ `Recovery`), `TreeCopier`, `TreeVerifier`, `ManifestStore`, `OffloadStatus`, `ProcessInspector` |
 | `Volumes/` | `VolumeCatalog`, `VolumeInfo`, `VolumeResolving`, `APFSInspector` (hidden space from `diskutil apfs list` and `tmutil`) |
 | `Cleanup/` | `TrashPolicy` (what may be trashed), `CollectorSet`, `CleanCatalog`, `CleanResolver`, `CleanMeasurer`, `AppInventory`, `DuplicateFinder` |

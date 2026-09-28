@@ -35,6 +35,8 @@ struct TreemapPanel: View {
                     ChangesView()
                 } else if navigator.analyzeMode == .duplicates {
                     DuplicatesView()
+                } else if let tree = model.currentScan?.tree, navigator.analyzeMode == .sunburst {
+                    SunburstView(tree: tree, focus: model.focusNode, unaccountedBytes: model.unaccountedBytes)
                 } else if let tree = model.currentScan?.tree, navigator.analyzeMode == .files {
                     LargestFilesView(tree: tree, focus: model.focusNode)
                 } else if let tree = model.currentScan?.tree {
