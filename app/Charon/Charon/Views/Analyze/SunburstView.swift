@@ -98,11 +98,13 @@ struct SunburstView: View {
                 .id(focus)
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
                 .contentShape(Rectangle())
-                .fileDrag(
-                    path: hovered?.node.map(tree.realPath), title: hovered?.title ?? "", size: hovered?.size ?? 0,
-                    isDirectory: hovered?.node.map(tree.isDirectory) ?? true,
-                    tint: hovered.map { Theme.treemapColor($0.colorIndex) } ?? Theme.accent
-                )
+                .fileDrag { point in
+                    guard let target = hit(point, segments: segments, geometry: geometry), let node = target.node else { return nil }
+                    return FileDragItem(
+                        path: tree.realPath(node), title: target.title, size: target.size,
+                        isDirectory: tree.isDirectory(node), tint: Theme.treemapColor(target.colorIndex)
+                    )
+                }
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let point):

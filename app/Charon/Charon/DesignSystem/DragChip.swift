@@ -28,21 +28,6 @@ struct DragChip: View {
     }
 }
 
-extension View {
-    /// Drags `path` as a file URL with a `DragChip` preview; nil makes nothing draggable.
-    @ViewBuilder
-    func fileDrag(path: String?, title: String, size: Int64, isDirectory: Bool = true, tint: Color = Theme.accent) -> some View {
-        onDrag {
-            guard let path else { return NSItemProvider() }
-            return NSItemProvider(object: URL(fileURLWithPath: path) as NSURL)
-        } preview: {
-            if path != nil {
-                DragChip(title: title, size: size, symbol: isDirectory ? "folder" : "doc", tint: tint)
-            }
-        }
-    }
-}
-
 #Preview {
     VStack(spacing: Theme.Spacing.md) {
         DragChip(title: "DerivedData", size: 42_000_000_000)
