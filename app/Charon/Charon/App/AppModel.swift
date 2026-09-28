@@ -38,6 +38,7 @@ final class AppModel {
             return GitWorktreeFinder.repositories(in: tree)
         }
         Task { await offload.reconcile() }
+        HistoryGestures.install(back: { [weak self] in self?.goBack() }, forward: { [weak self] in self?.goForward() })
         MonitorLoginItem.enableOnFirstLaunch()
         if !hasFullDiskAccess, !UserDefaults.standard.bool(forKey: AppSettings.accessPromptShown) {
             UserDefaults.standard.set(true, forKey: AppSettings.accessPromptShown)
@@ -108,6 +109,19 @@ final class AppModel {
     func focus(_ node: DiskTree.NodeID) {
         guard let tree = currentScan?.tree else { return }
         navigator.focus(node == DiskTree.root ? nil : tree.displayPath(node))
+    }
+
+    /// With no history yet (a folder opened from the menu bar), back goes to the enclosing folder.
+    var canGoBack: Bool {
+        navigator.canGoBack || (navigator.tab == .analyze && focusNode != DiskTree.root)
+    }
+
+    func goBack() {
+        if navigator.canGoBack { navigator.goBack() } else if canGoBack { focusParent() }
+    }
+
+    func goForward() {
+        navigator.goForward()
     }
 
     /// Goes up, skipping wrapper folders that only contain the folder we came from.

@@ -56,34 +56,43 @@ struct TopBar: View {
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
-        HStack {
-            Spacer()
+        ZStack {
             PillTabBar(
                 tabs: AppTab.allCases.map { PillTab(id: $0, title: $0.title, symbol: $0.symbol) },
                 selection: navigator.tab
             ) { navigator.selectTab($0) }
-            Spacer()
-            Menu {
-                Button("Rescan", systemImage: "arrow.clockwise") { model.rescanCurrent() }
-                Button("Scan as Administrator…", systemImage: "lock.open") { model.rescanCurrentAsAdministrator() }
-                Button("Export Current Folder as CSV…", systemImage: "square.and.arrow.up") { model.exportCurrentFolder() }
-                Button("Full Disk Access…", systemImage: "lock.shield") { SystemIntegration.openFullDiskAccessSettings() }
-                Divider()
-                Button("Settings…", systemImage: "gearshape") { openSettings() }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                    .frame(width: 32, height: 28)
+            HStack {
+                HistoryButtons(
+                    canGoBack: model.canGoBack, canGoForward: navigator.canGoForward,
+                    onBack: { model.goBack() }, onForward: { model.goForward() }
+                )
+                Spacer()
+                moreMenu
             }
-            .menuStyle(.button)
-            .buttonStyle(.plain)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .accessibilityLabel("More")
         }
         .padding(.horizontal, Theme.Spacing.xl)
         .padding(.top, Theme.Spacing.sm)
         .padding(.bottom, Theme.Spacing.md)
+    }
+
+    private var moreMenu: some View {
+        Menu {
+            Button("Rescan", systemImage: "arrow.clockwise") { model.rescanCurrent() }
+            Button("Scan as Administrator…", systemImage: "lock.open") { model.rescanCurrentAsAdministrator() }
+            Button("Export Current Folder as CSV…", systemImage: "square.and.arrow.up") { model.exportCurrentFolder() }
+            Button("Full Disk Access…", systemImage: "lock.shield") { SystemIntegration.openFullDiskAccessSettings() }
+            Divider()
+            Button("Settings…", systemImage: "gearshape") { openSettings() }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Theme.textPrimary)
+                .frame(width: 32, height: 28)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .accessibilityLabel("More")
     }
 }

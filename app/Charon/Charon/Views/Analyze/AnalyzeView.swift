@@ -68,15 +68,6 @@ struct AnalyzeHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             HStack(spacing: Theme.Spacing.md) {
-                HStack(spacing: 2) {
-                    Button { navigator.goBack() } label: { Image(systemName: "chevron.left") }
-                        .disabled(!navigator.canGoBack)
-                        .accessibilityLabel("Back")
-                    Button { navigator.goForward() } label: { Image(systemName: "chevron.right") }
-                        .disabled(!navigator.canGoForward)
-                        .accessibilityLabel("Forward")
-                }
-                .buttonStyle(.borderless)
                 Breadcrumb(crumbs: crumbs) { crumb in
                     navigator.focus(crumb.id.isEmpty ? nil : crumb.id)
                 }

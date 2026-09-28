@@ -8,10 +8,10 @@ struct CharonCommands: Commands {
 
     var body: some Commands {
         CommandGroup(after: .sidebar) {
-            Button("Back") { model.navigator.goBack() }
+            Button("Back") { model.goBack() }
                 .keyboardShortcut("[", modifiers: .command)
-                .disabled(!model.navigator.canGoBack)
-            Button("Forward") { model.navigator.goForward() }
+                .disabled(!model.canGoBack)
+            Button("Forward") { model.goForward() }
                 .keyboardShortcut("]", modifiers: .command)
                 .disabled(!model.navigator.canGoForward)
             Button("Enclosing Folder") { model.focusParent() }

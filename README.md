@@ -62,7 +62,7 @@ A small login item that shows free space in the menu bar, warns before your disk
 | ← or ⌘↑ | Enclosing folder |
 | Space | Quick Look |
 | Delete | Add to Collector |
-| ⌘[ ⌘] | Back, Forward |
+| ⌘[ ⌘], mouse back/forward buttons, three-finger swipe | Back, Forward |
 | ⌘R | Rescan |
 | ⌘1–⌘5 | Tabs |
 
