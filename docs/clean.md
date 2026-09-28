@@ -23,6 +23,8 @@ Categories marked **Rebuilt automatically** are selected by default; **Review fi
 
 The catalog lives in `CleanCatalog` (CharonKit). Sizes come from one scan per root; items in use or protected are skipped and reported.
 
+Each row shows where the category lives. Right-click a row, or an item in its expanded list, to open that folder in the Map or Rings, reveal it in Finder, or copy its path.
+
 ## Merged git worktrees
 
 For every repository in the last startup disk scan (a folder with a `.git` directory, outside `Library` and `node_modules`), Charon lists its linked worktrees and offers the ones that lose nothing when removed:

@@ -88,6 +88,11 @@ struct CleanRowView: View {
                     }
                     Text(row.category.detail).font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
+                    if row.category.mode == .contents, let location = row.locations.first {
+                        Text(row.locations.count == 1 ? LocationActions.display(location) : "\(row.locations.count) locations")
+                            .font(.monoCaption).foregroundStyle(Theme.textSecondary)
+                            .lineLimit(1).truncationMode(.middle)
+                    }
                 }
                 Spacer()
                 size
@@ -118,6 +123,8 @@ struct CleanRowView: View {
                                 .buttonStyle(.borderless)
                                 .accessibilityLabel("Reveal in Finder")
                         }
+                        .contentShape(Rectangle())
+                        .contextMenu { LocationActions(locations: [item.url]) }
                     }
                     if items.count > 25 {
                         Text("and \(items.count - 25) more").font(.monoCaption).foregroundStyle(Theme.textSecondary)
@@ -127,6 +134,9 @@ struct CleanRowView: View {
             }
         }
         .card(padding: Theme.Spacing.md)
+        .contextMenu {
+            if !row.locations.isEmpty { LocationActions(locations: row.locations) }
+        }
     }
 
     @ViewBuilder

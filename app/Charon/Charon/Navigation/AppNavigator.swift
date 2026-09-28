@@ -112,6 +112,11 @@ final class AppNavigator {
         push(next)
     }
 
+    /// Opens folder `path` on `targetID` in the Map or Rings, in one history entry.
+    func show(_ path: String, in targetID: String, mode: AnalyzeMode) {
+        push(NavigationLocation(tab: .analyze, targetID: targetID, focusPath: path == "/" ? nil : path, analyzeMode: mode))
+    }
+
     /// Shows `path` selected inside its parent on `targetID`, in one history entry.
     func reveal(_ path: String, in targetID: String) {
         var next = location

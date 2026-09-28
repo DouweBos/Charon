@@ -19,6 +19,13 @@ final class CleanViewModel {
         var id: String { category.id }
         var bytes: Int64 { items?.reduce(0) { $0 + $1.bytes } ?? 0 }
         var isMeasured: Bool { items != nil || error != nil }
+        /// Where the category lives on disk: the folder whose contents it clears, or the items themselves.
+        var locations: [URL] {
+            guard let items else { return [] }
+            guard category.mode == .contents else { return items.map(\.url) }
+            var seen = Set<String>()
+            return items.map { $0.url.deletingLastPathComponent() }.filter { seen.insert($0.path).inserted }
+        }
     }
 
     private(set) var rows: [Row] = CleanCatalog.all.map { Row(category: $0) }

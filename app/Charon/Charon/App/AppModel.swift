@@ -198,6 +198,18 @@ final class AppModel {
         startCurrentScan()
     }
 
+    /// Opens a folder from elsewhere in the app (Clean, Uninstall) in its disk's Map or Rings.
+    func showInAnalyze(_ url: URL, mode: AnalyzeMode) {
+        guard let volume = volumes.volumeContaining(url.path) else { return }
+        let path = OffloadPreflight.userFacingPath(url.standardizedFileURL.path)
+        if url.hasDirectoryPath || (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+            navigator.show(path, in: volume.id, mode: mode)
+        } else {
+            navigator.reveal(path, in: volume.id)
+        }
+        startCurrentScan()
+    }
+
     func isInCurrentScan(_ url: URL) -> Bool {
         currentScan?.tree?.node(atDisplayPath: OffloadPreflight.userFacingPath(url.standardizedFileURL.path)) != nil
     }
