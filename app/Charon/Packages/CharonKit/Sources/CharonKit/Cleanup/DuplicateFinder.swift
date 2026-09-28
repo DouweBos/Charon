@@ -62,28 +62,51 @@ public struct DuplicateFinder: Sendable {
         return Int64(info.st_size)
     }
 
+    static let sampleBytes = 64 * 1024
+
     static func sampleHash(_ path: String) -> Data? {
-        guard let handle = FileHandle(forReadingAtPath: path) else { return nil }
-        defer { try? handle.close() }
-        let chunk = 64 * 1024
-        var hasher = SHA256()
-        guard let head = try? handle.read(upToCount: chunk) else { return nil }
-        hasher.update(data: head)
-        if let end = try? handle.seekToEnd(), end > UInt64(chunk) {
-            try? handle.seek(toOffset: end - UInt64(chunk))
-            if let tail = try? handle.read(upToCount: chunk) { hasher.update(data: tail) }
+        withFile(path) { fd, buffer in
+            var hasher = SHA256()
+            guard let head = readChunk(fd, buffer, sampleBytes) else { return nil }
+            hasher.update(bufferPointer: UnsafeRawBufferPointer(start: buffer, count: head))
+            let end = lseek(fd, 0, SEEK_END)
+            if end > sampleBytes, lseek(fd, end - off_t(sampleBytes), SEEK_SET) >= 0,
+               let tail = readChunk(fd, buffer, sampleBytes) {
+                hasher.update(bufferPointer: UnsafeRawBufferPointer(start: buffer, count: tail))
+            }
+            return Data(hasher.finalize())
         }
-        return Data(hasher.finalize())
     }
 
     static func fullHash(_ path: String) -> Data? {
-        guard let handle = FileHandle(forReadingAtPath: path) else { return nil }
-        defer { try? handle.close() }
-        var hasher = SHA256()
-        while let data = try? handle.read(upToCount: 1 << 20), !data.isEmpty {
-            hasher.update(data: data)
+        withFile(path) { fd, buffer in
+            var hasher = SHA256()
+            while true {
+                guard !Task.isCancelled, let count = readChunk(fd, buffer, chunkSize) else { return nil }
+                if count == 0 { break }
+                hasher.update(bufferPointer: UnsafeRawBufferPointer(start: buffer, count: count))
+            }
+            return Data(hasher.finalize())
         }
-        return Data(hasher.finalize())
+    }
+
+    private static let chunkSize = 1 << 20
+
+    /// POSIX reads into one reused buffer: FileHandle hands back autoreleased Data that a worker thread never
+    /// drains, so hashing gigabytes kept every chunk alive. F_NOCACHE keeps the scan from flooding the page cache.
+    private static func withFile(_ path: String, _ body: (Int32, UnsafeMutableRawPointer) -> Data?) -> Data? {
+        let fd = open(path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { return nil }
+        defer { close(fd) }
+        _ = fcntl(fd, F_NOCACHE, 1)
+        let buffer = UnsafeMutableRawPointer.allocate(byteCount: chunkSize, alignment: 16)
+        defer { buffer.deallocate() }
+        return body(fd, buffer)
+    }
+
+    private static func readChunk(_ fd: Int32, _ buffer: UnsafeMutableRawPointer, _ count: Int) -> Int? {
+        let result = read(fd, buffer, count)
+        return result < 0 ? nil : result
     }
 
     /// Keeps one path per APFS clone family (ATTR_CMNEXT_CLONEID).

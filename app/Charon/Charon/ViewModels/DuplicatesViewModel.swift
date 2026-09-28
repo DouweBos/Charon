@@ -33,9 +33,11 @@ final class DuplicatesViewModel {
         task = Task {
             defer { continuation.finish() }
             do {
-                let found = try await Task.detached(priority: .userInitiated) {
+                // A detached task doesn't inherit cancellation; forward it so Cancel stops the reads.
+                let work = Task.detached(priority: .userInitiated) {
                     try DuplicateFinder().find(in: tree) { continuation.yield($0) }
-                }.value
+                }
+                let found = try await withTaskCancellationHandler { try await work.value } onCancel: { work.cancel() }
                 groups = found
             } catch {
                 errorMessage = error.localizedDescription
