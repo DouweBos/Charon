@@ -1,25 +1,57 @@
-# Charon
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/icon-dark.png">
+    <img src="docs/images/icon-light.png" width="128" alt="Charon app icon">
+  </picture>
+</p>
 
-A native macOS disk analyzer built with SwiftUI. It shows where the space on any disk goes, and offloads heavy directories to an external drive (the external drive), leaving a symlink behind so everything keeps working.
+<h1 align="center">Charon</h1>
 
-## Features
+<p align="center">
+  <strong>See where your disk space goes. Then get it back.</strong><br>
+  A native macOS disk analyzer that finds what's filling your Mac, cleans what apps rebuild on their own,<br>
+  and moves heavy folders to an external drive without breaking a single path.
+</p>
 
-- Live, concurrent scan of the boot disk, any external disk, or any folder (Scan Folder… or drag one in)
-- Scan as Administrator: a one-off root scan (password prompt, no installed helper) that sizes folders owned by macOS and other users
-- Scans are remembered, so relaunching opens on the last result
-- Nested, drillable treemap with a matching sidebar and back/forward history
-- Rings: a sunburst view showing six levels at once, thinning outward, with a rim where there's more inside; click a ring to open it, the center to go up
-- Drag any tile or ring segment to the Collector (always at the bottom of Analyze), Finder or the Trash
-- Clean: sizes Xcode, simulator, package-manager and app caches, logs and leftovers, and moves them to the Trash
-- Uninstall: apps by size and last use, with their leftovers in ~/Library
-- Optimize: background launch agents and daemons, flagging ones whose app is gone
-- Duplicates: identical large files (size, sampled hash, full SHA-256), skipping APFS clones
-- Collector: gather files and folders, review the total, move them to the Trash (protected locations refused)
-- "System & other" breakdown: system volume, VM/Preboot/Recovery, purgeable, restricted
-- Offload: preflight safety checks, copy, SHA-256 verification of every file, then symlink swap
-- Offloaded directory tracking: Offloaded, Disconnected (drive unplugged), Drive moved, Broken; Move back and Relink
-- Crash-safe journal: interrupted offloads finish or roll back on next launch
-- Menu bar monitor (login item): free space at a glance, warnings when it runs low, and alerts when a drive with offloaded folders disconnects
+<p align="center">
+  <img src="docs/images/rings.png" width="820" alt="Charon's Rings view">
+</p>
+
+## Why Charon
+
+Your disk is always full, and the usual answer (delete something) is the wrong one half the time. Charon shows you exactly what's taking the space, tells you what's safe to clear, and for the things you want to keep but don't need on your internal drive, moves them to an external one and leaves a link behind, so every app still finds them.
+
+## Analyze
+
+Scan your startup disk, any external disk, or any folder, and see it in the way that suits you.
+
+- **Map**: a nested treemap that shows three levels at once and looks past folders that hold nearly everything, so you see inside your home folder straight away.
+- **Rings**: a sunburst with six levels, rings thinning outward, and a rim wherever there's more inside. Hover a ring and the sidebar shows what's in it.
+- **Largest Files**, filterable by how long since you last opened them.
+- **Changes**: what grew since your previous scan, narrowed down to the folder that explains it.
+- **Duplicates**: identical large files, checked by full SHA-256, leaving APFS clones out.
+- **System & other**, explained: the macOS volume, VM and recovery, purgeable space and restricted folders.
+- **Scan as Administrator** to measure folders owned by macOS and other users. It's a one-off scan behind the standard password prompt, with nothing left installed.
+
+Scans are fast (`getattrlistbulk` on every core), live while they run, and remembered between launches. Drag anything to the Collector at the bottom, review the total, and move it to the Trash.
+
+<p align="center">
+  <img src="docs/images/map.png" width="820" alt="Charon's Map view">
+</p>
+
+## Offload
+
+Move a folder to an external drive and leave a symlink in its place. Charon copies it, verifies every byte with SHA-256, and only then swaps in the link. Every step is journaled, so an interrupted move finishes or rolls back and never loses data. It refuses system and protected locations, warns when an app has files open, tracks every offloaded folder, tells you when its drive is disconnected, and moves it back when you want it home. It also suggests the largest folders that are safe to move.
+
+## Clean, Uninstall, Optimize
+
+- **Clean**: Xcode DerivedData, simulator and package-manager caches, app caches, logs, Mail attachments, old installers, and git worktrees whose work is already merged. Each is marked as rebuilt automatically or worth reviewing first. Everything goes to the Trash, never straight to deletion.
+- **Uninstall**: your apps by size and last use, with the leftovers they scattered through `~/Library`, matched by bundle ID.
+- **Optimize**: every launch agent and daemon, flagging the ones whose app is gone.
+
+## Menu bar monitor
+
+A small login item that shows free space in the menu bar, warns before your disk fills up, tells you when a drive with offloaded folders disconnects, and shows which folders grew most since your last scan. It's on by default; turn it off in Settings.
 
 ## Keyboard
 
@@ -36,13 +68,12 @@ A native macOS disk analyzer built with SwiftUI. It shows where the space on any
 
 ## Requirements
 
-- macOS 26.2+
-- Xcode 27+
-- Full Disk Access for complete scans (System Settings → Privacy & Security)
+- macOS 26.2 or later
+- Full Disk Access for complete scans (System Settings → Privacy & Security). Charon walks you through it on first launch.
 
 ## Building
 
-Open `app/Charon/Charon.xcodeproj` and build the `Charon` scheme, or:
+Needs Xcode 27 or later. Open `app/Charon/Charon.xcodeproj` and build the `Charon` scheme, or:
 
 ```sh
 cd app/Charon
@@ -50,7 +81,7 @@ xcodebuild -project Charon.xcodeproj -scheme Charon -derivedDataPath build -dest
 open build/Build/Products/Debug/Charon.app
 ```
 
-Engine tests run headlessly: `cd app/Charon/Packages/CharonKit && swift test`.
+The engine (`CharonKit`) has no UI dependencies and its tests run headlessly: `cd app/Charon/Packages/CharonKit && swift test`.
 
 ## Docs
 
