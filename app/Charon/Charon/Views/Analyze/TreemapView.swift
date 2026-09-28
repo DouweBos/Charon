@@ -92,10 +92,18 @@ struct TreemapView: View {
             }
             let hovered = hoveredID.flatMap { id in tiles.first { $0.id == id } }
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                Canvas { context, _ in
-                    for tile in tiles {
-                        draw(tile, in: &context, isHovered: tile.id == hoveredID)
+                ZStack {
+                    StaticCanvas(key: key) { context in
+                        for tile in tiles { draw(tile, in: &context) }
                     }
+                    .equatable()
+                    // Only the highlight depends on hover, so only this layer redraws while the pointer moves.
+                    Canvas { context, _ in
+                        for tile in tiles where tile.id == hoveredID || isSelected(tile) {
+                            context.stroke(shape(tile), with: .color(Theme.tileHoverStroke), lineWidth: 2)
+                        }
+                    }
+                    .allowsHitTesting(false)
                 }
                 .onContinuousHover { phase in
                     switch phase {
@@ -176,16 +184,16 @@ struct TreemapView: View {
         return path == selectedPath || path == navigator.hoveredPath
     }
 
-    private func draw(_ tile: TreemapTile, in context: inout GraphicsContext, isHovered: Bool) {
-        let isNeutral = tile.content == .unaccounted
-        let shape = RoundedRectangle(cornerRadius: tile.depth == 1 ? Theme.Radius.tile + 2 : Theme.Radius.tile, style: .continuous)
+    private func shape(_ tile: TreemapTile) -> Path {
+        RoundedRectangle(cornerRadius: tile.depth == 1 ? Theme.Radius.tile + 2 : Theme.Radius.tile, style: .continuous)
             .path(in: tile.rect)
-        context.fill(shape, with: .color(Theme.treemapFill(
+    }
+
+    private func draw(_ tile: TreemapTile, in context: inout GraphicsContext) {
+        let isNeutral = tile.content == .unaccounted
+        context.fill(shape(tile), with: .color(Theme.treemapFill(
             colorIndex: tile.colorIndex, depth: tile.depth, isContainer: tile.isContainer, isNeutral: isNeutral
         )))
-        if isHovered || isSelected(tile) {
-            context.stroke(shape, with: .color(Theme.tileHoverStroke), lineWidth: 2)
-        }
         if tile.isContainer {
             drawHeader(tile, in: &context)
         } else {

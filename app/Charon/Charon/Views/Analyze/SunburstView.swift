@@ -27,6 +27,12 @@ struct SunburstView: View {
         var unaccounted: Int64
     }
 
+    private struct RingsKey: Hashable {
+        var layout: LayoutKey
+        var width: CGFloat
+        var height: CGFloat
+    }
+
     private struct Geometry {
         var center: CGPoint
         var hole: CGFloat
@@ -54,9 +60,10 @@ struct SunburstView: View {
             VStack(spacing: Theme.Spacing.xs) {
                 ZStack {
                     // The rings don't depend on hover, so moving the pointer only redraws the highlight overlay.
-                    Canvas { context, _ in
+                    StaticCanvas(key: RingsKey(layout: key, width: area.width, height: area.height)) { context in
                         for segment in segments { draw(segment, geometry: geometry, in: &context) }
                     }
+                    .equatable()
                     Canvas { context, _ in
                         for segment in segments where segment.id == hoveredID || isSelected(segment) {
                             context.stroke(path(segment, geometry: geometry), with: .color(Theme.textPrimary), lineWidth: 2)
