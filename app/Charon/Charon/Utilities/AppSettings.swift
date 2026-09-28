@@ -17,6 +17,7 @@ enum AppSettings {
     static let excludedPaths = "scan.excludedPaths"
     static let largestFilesAge = "files.ageFilterDays"
     static let accessPromptShown = "onboarding.accessPromptShown"
+    static let monitorEnabledByDefault = "monitor.enabledByDefault"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: MonitorSettings.defaults)

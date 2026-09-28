@@ -38,6 +38,7 @@ final class AppModel {
             return GitWorktreeFinder.repositories(in: tree)
         }
         Task { await offload.reconcile() }
+        MonitorLoginItem.enableOnFirstLaunch()
         if !hasFullDiskAccess, !UserDefaults.standard.bool(forKey: AppSettings.accessPromptShown) {
             UserDefaults.standard.set(true, forKey: AppSettings.accessPromptShown)
             navigator.present(.fullDiskAccess)

@@ -1,4 +1,6 @@
-// Renders the app icon as an Icon Composer bundle: swift scripts/render-icon.swift Charon/AppIcon.icon
+// Renders the app icon as an Icon Composer bundle. Run once per app:
+//   swift scripts/render-icon.swift Charon/AppIcon.icon
+//   swift scripts/render-icon.swift CharonMonitor/AppIcon.icon
 // Treemap tiles in amber, on a warm light backdrop for light mode and a charcoal one for dark mode.
 // macOS draws the backdrop from icon.json's fill and masks it to the icon shape; the glyph is a full-canvas layer.
 // Same geometry as CharonMark (DesignSystem), in unit coordinates with y down.
