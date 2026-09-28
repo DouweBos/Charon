@@ -50,8 +50,8 @@ public struct TreemapConfiguration: Sendable, Hashable {
     public var maxItemsPerLevel: Int
 
     public init(
-        maxDepth: Int = 2, gap: CGFloat = 4, headerHeight: CGFloat = 22,
-        minNestedSize: CGSize = CGSize(width: 120, height: 90), maxItemsPerLevel: Int = 40
+        maxDepth: Int = 3, gap: CGFloat = 4, headerHeight: CGFloat = 22,
+        minNestedSize: CGSize = CGSize(width: 100, height: 70), maxItemsPerLevel: Int = 40
     ) {
         self.maxDepth = maxDepth
         self.gap = gap
@@ -70,7 +70,7 @@ public enum TreemapLayout {
     ) -> [TreemapTile] {
         var tiles: [TreemapTile] = []
         layoutLevel(
-            tree: tree, parent: focus, rect: rect, depth: 1, colorIndex: nil,
+            tree: tree, parent: focus, rect: rect, depth: 1, budget: 0, colorIndex: nil,
             configuration: configuration, unaccounted: unaccountedBytes, tiles: &tiles
         )
         return tiles
@@ -121,10 +121,15 @@ public enum TreemapLayout {
 
     // swiftlint:disable:next function_parameter_count
     private static func layoutLevel(
-        tree: DiskTree, parent: DiskTree.NodeID, rect: CGRect, depth: Int, colorIndex: Int?,
+        tree: DiskTree, parent: DiskTree.NodeID, rect: CGRect, depth: Int, budget: Int, colorIndex: Int?,
         configuration: TreemapConfiguration, unaccounted: Int64, tiles: inout [TreemapTile]
     ) {
         let levelItems = items(tree: tree, parent: parent, unaccounted: unaccounted, limit: configuration.maxItemsPerLevel)
+        // A level where one folder holds nearly everything ("Users" → "douwe") tells you nothing new,
+        // so it doesn't use up a level of the depth budget.
+        let total = levelItems.reduce(Int64(0)) { $0 + $1.size }
+        let dominated = (levelItems.first?.size ?? 0) * 100 >= total * 85
+        let spent = budget + (dominated ? 0 : 1)
         let rects = SquarifiedLayout.layout(weights: levelItems.map { Double($0.size) }, in: rect)
         let half = configuration.gap / 2
 
@@ -132,7 +137,7 @@ public enum TreemapLayout {
             let inset = itemRect.insetBy(dx: half, dy: half)
             guard inset.width >= 2, inset.height >= 2 else { continue }
             let color = colorIndex ?? index
-            let canNest = item.nestable && depth < configuration.maxDepth
+            let canNest = item.nestable && spent < configuration.maxDepth
                 && inset.width >= configuration.minNestedSize.width && inset.height >= configuration.minNestedSize.height
             tiles.append(TreemapTile(
                 id: tiles.count, content: item.content, title: item.title, size: item.size,
@@ -144,7 +149,7 @@ public enum TreemapLayout {
                 width: inset.width - configuration.gap, height: inset.height - configuration.headerHeight - half
             )
             layoutLevel(
-                tree: tree, parent: target, rect: inner, depth: depth + 1, colorIndex: color,
+                tree: tree, parent: target, rect: inner, depth: depth + 1, budget: spent, colorIndex: color,
                 configuration: configuration, unaccounted: 0, tiles: &tiles
             )
         }

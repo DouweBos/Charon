@@ -95,4 +95,28 @@ struct TreemapLayoutTests {
         #expect(lines[1] == "\"/Users\",700,1,folder")
         #expect(lines.last == "\"//(files)\",50,,files")
     }
+
+    @Test func dominatedLevelsDontUseUpDepth() {
+        var tree = DiskTree(rootPath: "/data", displayRootPath: "/")
+        let users = tree.addNode(name: "Users", parent: DiskTree.root, kind: .directory)
+        let me = tree.addNode(name: "me", parent: users, kind: .directory)
+        let shared = tree.addNode(name: "Shared", parent: users, kind: .directory)
+        tree.accumulate(into: shared, size: 1, privateSize: 0, items: 1)
+        let movies = tree.addNode(name: "Movies", parent: me, kind: .directory)
+        let code = tree.addNode(name: "Code", parent: me, kind: .directory)
+        let clip = tree.addNode(name: "Clip", parent: movies, kind: .directory)
+        tree.accumulate(into: clip, size: 500, privateSize: 0, items: 1)
+        tree.accumulate(into: movies, size: 100, privateSize: 0, items: 1)
+        tree.accumulate(into: code, size: 400, privateSize: 0, items: 1)
+        let library = tree.addNode(name: "Library", parent: DiskTree.root, kind: .directory)
+        tree.accumulate(into: library, size: 300, privateSize: 0, items: 1)
+
+        let tiles = TreemapLayout.tiles(
+            for: tree, focus: DiskTree.root, in: CGRect(x: 0, y: 0, width: 1200, height: 900),
+            configuration: TreemapConfiguration(maxDepth: 2)
+        )
+        // Users → me is dominated, so me's children (Movies, Code) are still drawn with a depth of 2.
+        #expect(tiles.contains { $0.title == "Movies" })
+        #expect(tiles.contains { $0.title == "Code" })
+    }
 }

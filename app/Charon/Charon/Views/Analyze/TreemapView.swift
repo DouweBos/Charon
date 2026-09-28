@@ -9,7 +9,7 @@ import SwiftUI
 struct TreemapPanel: View {
     @Environment(AppModel.self) private var model
     @Environment(AppNavigator.self) private var navigator
-    @AppStorage(AppSettings.treemapDepth) private var depth = 2
+    @AppStorage(AppSettings.treemapDepth) private var depth = 3
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
@@ -36,7 +36,7 @@ struct TreemapPanel: View {
                 } else if let tree = model.currentScan?.tree {
                     TreemapView(
                         tree: tree, focus: model.focusNode, unaccountedBytes: model.unaccountedBytes,
-                        depth: min(max(depth, 1), 3), selectedPath: navigator.selectedPath
+                        depth: min(max(depth, 1), 4), selectedPath: navigator.selectedPath
                     )
                 } else {
                     RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.surface)

@@ -25,7 +25,7 @@ enum AppSettings {
             largeFileThresholdMB: 50,
             measurePrivateSize: false,
             rememberScans: true,
-            treemapDepth: 2,
+            treemapDepth: 3,
             showStats: true,
             driveFolder: "Charon"
         ])

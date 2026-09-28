@@ -11,7 +11,7 @@ struct SettingsView: View {
     @AppStorage(AppSettings.largeFileThresholdMB) private var largeFileThresholdMB = 50
     @AppStorage(AppSettings.measurePrivateSize) private var measurePrivateSize = false
     @AppStorage(AppSettings.rememberScans) private var rememberScans = true
-    @AppStorage(AppSettings.treemapDepth) private var treemapDepth = 2
+    @AppStorage(AppSettings.treemapDepth) private var treemapDepth = 3
     @AppStorage(AppSettings.showStats) private var showStats = true
     @AppStorage(AppSettings.driveFolder) private var driveFolder = "Charon"
     @AppStorage(MonitorSettings.lowGigabytes) private var lowGigabytes = 20
@@ -54,6 +54,7 @@ struct SettingsView: View {
                     Text("1 level").tag(1)
                     Text("2 levels").tag(2)
                     Text("3 levels").tag(3)
+                    Text("4 levels").tag(4)
                 }
                 Toggle("Show live stats", isOn: $showStats)
             }
