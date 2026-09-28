@@ -89,7 +89,8 @@ struct SunburstView: View {
                         .allowsHitTesting(false)
                     }
                     centerLabel(hovered: hovered)
-                        .frame(width: geometry.hole * 1.8, height: geometry.hole * 1.8)
+                        // A square inscribed in the hole, so text never touches the ring.
+                        .frame(width: geometry.hole * 1.4, height: geometry.hole * 1.4)
                         .position(geometry.center)
                         .allowsHitTesting(false)
                 }
@@ -146,13 +147,16 @@ struct SunburstView: View {
             Text(ByteSize.format(hovered?.size ?? (tree.size(focus) + unaccountedBytes)))
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .foregroundStyle(Theme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
             Text(hovered?.title ?? tree.name(focus))
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
-        .minimumScaleFactor(0.6)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
     }
 
     private func path(_ segment: SunburstSegment, geometry: Geometry) -> Path {
