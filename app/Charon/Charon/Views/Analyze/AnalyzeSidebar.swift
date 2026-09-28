@@ -8,6 +8,7 @@ struct AnalyzeSidebar: View {
     @Environment(AppModel.self) private var model
     @Environment(AppNavigator.self) private var navigator
     @Environment(VolumesViewModel.self) private var volumes
+    @State private var listHeight: CGFloat = .infinity
 
     var body: some View {
         VStack(spacing: Theme.Spacing.lg) {
@@ -22,9 +23,6 @@ struct AnalyzeSidebar: View {
                         ForEach(model.levelEntries) { entry in
                             row(entry)
                         }
-                    }
-                    if let volume = model.currentTarget?.isFolder == false ? model.currentVolume : nil {
-                        freeSpace(volume)
                     }
                     let offloaded = model.offloadedHere
                     if !offloaded.isEmpty {
@@ -45,6 +43,13 @@ struct AnalyzeSidebar: View {
                 }
             }
             .scrollIndicators(.never)
+            // Hug the rows so the footer follows them, until they overflow and it sticks to the bottom.
+            .frame(maxHeight: listHeight)
+            .onScrollGeometryChange(for: CGFloat.self, of: \.contentSize.height) { listHeight = max($1, 1) }
+            if let volume = model.currentTarget?.isFolder == false ? model.currentVolume : nil {
+                freeSpace(volume)
+            }
+            Spacer(minLength: 0)
         }
     }
 
@@ -104,7 +109,6 @@ struct AnalyzeSidebar: View {
         }
         .font(.system(size: 12))
         .padding(.horizontal, Theme.Spacing.md)
-        .padding(.top, Theme.Spacing.md)
     }
 
     private var title: String {
