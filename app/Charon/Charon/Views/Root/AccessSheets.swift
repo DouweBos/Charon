@@ -16,34 +16,56 @@ struct FullDiskAccessSheet: View {
             HStack(spacing: Theme.Spacing.md) {
                 PlanetView().frame(width: 56)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Let Charon see the whole disk").font(.system(size: 18, weight: .semibold))
-                    Text("Without Full Disk Access, Mail, Messages, Safari and other protected folders count as unknown space.")
+                    Text(model.hasFullDiskAccess ? "Charon can see the whole disk" : "Let Charon see the whole disk")
+                        .font(.system(size: 18, weight: .semibold))
+                    Text(subtitle)
                         .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                step(1, "Open Privacy & Security → Full Disk Access.")
-                step(2, "Turn on Charon. If it isn't listed, drag Charon from Finder into the list.")
-                step(3, "Quit and reopen Charon when macOS asks.")
-            }
             if model.hasFullDiskAccess {
-                Label("Access granted", systemImage: "checkmark.circle.fill").foregroundStyle(Theme.success)
+                Label("Full Disk Access is on. No restart needed.", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(Theme.success)
+            } else {
+                VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                    step(1, "Open Privacy & Security → Full Disk Access.")
+                    step(2, "Turn on Charon. If it isn't listed, drag Charon from Finder into the list.")
+                    step(3, "Come back here. If Charon still can't see protected folders, quit and reopen it.")
+                }
             }
             Spacer(minLength: 0)
             HStack {
-                Button("Show Charon in Finder") { SystemIntegration.revealInFinder(Bundle.main.bundlePath) }
-                Spacer()
-                Button("Not Now") { navigator.dismissSheet() }.keyboardShortcut(.cancelAction)
-                Button("Open Settings") { SystemIntegration.openFullDiskAccessSettings() }.keyboardShortcut(.defaultAction)
+                if model.hasFullDiskAccess {
+                    Spacer()
+                    Button("Done") { navigator.dismissSheet() }.keyboardShortcut(.cancelAction)
+                    Button(model.currentScan?.isScanning == true ? "Restart Scan" : "Rescan") {
+                        navigator.dismissSheet()
+                        model.rescanCurrent()
+                    }
+                    .keyboardShortcut(.defaultAction)
+                } else {
+                    Button("Show Charon in Finder") { SystemIntegration.revealInFinder(Bundle.main.bundlePath) }
+                    Spacer()
+                    Button("Not Now") { navigator.dismissSheet() }.keyboardShortcut(.cancelAction)
+                    Button("Open Settings") { SystemIntegration.openFullDiskAccessSettings() }.keyboardShortcut(.defaultAction)
+                }
             }
         }
         .padding(Theme.Spacing.xl)
-        .frame(width: 520, height: 330)
+        .frame(width: 520, height: 300)
         .background(Theme.background)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.recheckFullDiskAccess()
         }
+    }
+
+    private var subtitle: String {
+        guard model.hasFullDiskAccess else {
+            return "Without Full Disk Access, Mail, Messages, Safari and other protected folders count as unknown space."
+        }
+        return model.currentScan?.isScanning == true
+            ? "The scan that's running started before access was granted, so it may skip protected folders. Restart it to include them."
+            : "Scans from before access was granted may have skipped protected folders. Rescan to include them."
     }
 
     private func step(_ number: Int, _ text: String) -> some View {
