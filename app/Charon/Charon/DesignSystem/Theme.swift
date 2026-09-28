@@ -26,9 +26,9 @@ enum Theme {
     static let statBattery = Color(.statBattery)
     static let statNetwork = Color(.statNetwork)
 
-    static let planetLight = Color(.planetLight)
-    static let planetBand = Color(.planetBand)
-    static let planetDark = Color(.planetDark)
+    static let markBackground = Color(.markBackground)
+    static let markMoon = Color(.markMoon)
+    static let markSilhouette = Color(.markSilhouette)
 
     static let treemapPalette: [Color] = [
         Color(.treemap1), Color(.treemap2), Color(.treemap3), Color(.treemap4),

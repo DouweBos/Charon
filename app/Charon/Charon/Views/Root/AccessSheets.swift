@@ -14,7 +14,7 @@ struct FullDiskAccessSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
             HStack(spacing: Theme.Spacing.md) {
-                PlanetView().frame(width: 56)
+                CharonMark().frame(width: 56)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.hasFullDiskAccess ? "Charon can see the whole disk" : "Let Charon see the whole disk")
                         .font(.system(size: 18, weight: .semibold))

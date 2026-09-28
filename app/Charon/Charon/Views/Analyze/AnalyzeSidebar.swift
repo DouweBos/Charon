@@ -59,7 +59,7 @@ struct AnalyzeSidebar: View {
             }
         } label: {
             VStack(spacing: Theme.Spacing.sm) {
-                PlanetView().frame(width: 150)
+                CharonMark().frame(width: 120)
                 Text(title).font(.capacityTitle).lineLimit(1).minimumScaleFactor(0.5)
                 HStack(spacing: Theme.Spacing.xs) {
                     Text(subtitle)
