@@ -20,6 +20,7 @@ struct AnalyzeView: View {
                     AnalyzeHeader()
                     AnalyzeBanners()
                     TreemapPanel()
+                    RestrictedNote()
                     CollectorBar()
                 }
             }
@@ -129,16 +130,6 @@ struct AnalyzeBanners: View {
                 action: { navigator.present(.fullDiskAccess) },
                 onDismiss: { model.dismissAccessBanner() }
             )
-        } else if let scan = model.currentScan, !scan.isScanning, scan.progress.unreadableDirectories > 0 {
-            Banner(
-                symbol: "lock",
-                message: "\(scan.progress.unreadableDirectories.formatted()) folders are restricted to macOS or other users;"
-                    + " their space is in System & other.",
-                actionTitle: scan.isAdministrator ? "Show" : "Scan as Administrator",
-                action: {
-                    if scan.isAdministrator { navigator.present(.restrictedFolders) } else { model.rescanCurrentAsAdministrator() }
-                }
-            )
         }
         if case .failed(let message) = model.currentScan?.phase {
             Banner(symbol: "xmark.octagon", message: "Scan failed: \(message)", tone: .negative)
@@ -149,5 +140,31 @@ struct AnalyzeBanners: View {
         let unreadable = model.currentScan?.progress.unreadableDirectories ?? 0
         let base = "Grant Charon Full Disk Access to see everything, then relaunch it."
         return unreadable > 0 ? "\(unreadable.formatted()) folders couldn't be read. " + base : base
+    }
+}
+
+/// Restricted folders are expected even with Full Disk Access, so this is a quiet note under the map, not a banner.
+struct RestrictedNote: View {
+    @Environment(AppModel.self) private var model
+    @Environment(AppNavigator.self) private var navigator
+
+    var body: some View {
+        if model.hasFullDiskAccess || model.dismissedAccessBanner,
+           let scan = model.currentScan, !scan.isScanning, scan.progress.unreadableDirectories > 0 {
+            HStack(spacing: Theme.Spacing.sm) {
+                Image(systemName: "lock")
+                Text("\(scan.progress.unreadableDirectories.formatted()) folders are restricted to macOS or other users;"
+                     + " their space is in System & other.")
+                    .lineLimit(1).truncationMode(.tail)
+                Button(scan.isAdministrator ? "Show" : "Scan as Administrator") {
+                    if scan.isAdministrator { navigator.present(.restrictedFolders) } else { model.rescanCurrentAsAdministrator() }
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(Theme.accent)
+                Spacer(minLength: 0)
+            }
+            .font(.system(size: 12))
+            .foregroundStyle(Theme.textSecondary)
+        }
     }
 }
