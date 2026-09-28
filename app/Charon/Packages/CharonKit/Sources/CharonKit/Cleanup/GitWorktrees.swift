@@ -27,35 +27,36 @@ public struct StaleWorktree: Sendable, Hashable, Identifiable {
 }
 
 public enum GitWorktreeParser {
-    // swiftlint:disable:next cyclomatic_complexity
     /// Parses `git worktree list --porcelain`. The first entry is the main worktree.
     public static func parse(_ output: String) -> [GitWorktree] {
         var worktrees: [GitWorktree] = []
         var current: GitWorktree?
         for line in output.split(separator: "\n", omittingEmptySubsequences: false) {
-            if line.isEmpty {
-                if let finished = current { worktrees.append(finished) }
-                current = nil
-                continue
-            }
             let parts = line.split(separator: " ", maxSplits: 1)
-            let key = String(parts[0])
-            let value = parts.count > 1 ? String(parts[1]) : ""
-            switch key {
-            case "worktree":
+            let key = parts.first.map(String.init) ?? ""
+            if key.isEmpty || key == "worktree" {
                 if let finished = current { worktrees.append(finished) }
-                current = GitWorktree(path: value, head: nil, branch: nil, isMain: worktrees.isEmpty,
-                                      isBare: false, isLocked: false, isPrunable: false)
-            case "HEAD": current?.head = value
-            case "branch": current?.branch = value.replacingOccurrences(of: "refs/heads/", with: "")
-            case "bare": current?.isBare = true
-            case "locked": current?.isLocked = true
-            case "prunable": current?.isPrunable = true
-            default: break
+                current = key.isEmpty ? nil : GitWorktree(
+                    path: parts.count > 1 ? String(parts[1]) : "", head: nil, branch: nil, isMain: worktrees.isEmpty,
+                    isBare: false, isLocked: false, isPrunable: false
+                )
+            } else if current != nil {
+                apply(key, parts.count > 1 ? String(parts[1]) : "", to: &current!)
             }
         }
         if let finished = current { worktrees.append(finished) }
         return worktrees
+    }
+
+    private static func apply(_ key: String, _ value: String, to worktree: inout GitWorktree) {
+        switch key {
+        case "HEAD": worktree.head = value
+        case "branch": worktree.branch = value.replacingOccurrences(of: "refs/heads/", with: "")
+        case "bare": worktree.isBare = true
+        case "locked": worktree.isLocked = true
+        case "prunable": worktree.isPrunable = true
+        default: break
+        }
     }
 }
 
