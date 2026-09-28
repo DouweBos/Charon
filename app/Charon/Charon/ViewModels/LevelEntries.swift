@@ -32,10 +32,19 @@ struct LevelEntry: Identifiable, Hashable {
 
 extension AppModel {
     var levelEntries: [LevelEntry] {
+        entries(of: focusNode, unaccounted: unaccountedBytes)
+    }
+
+    /// The node the rings are hovering, shown in the sidebar instead of the drilled-into folder.
+    var peekedNode: DiskTree.NodeID? {
+        guard let path = navigator.peekPath, let tree = currentScan?.tree else { return nil }
+        return tree.node(atDisplayPath: path)
+    }
+
+    func entries(of focus: DiskTree.NodeID, unaccounted: Int64 = 0) -> [LevelEntry] {
         guard let tree = currentScan?.tree else { return [] }
-        let focus = focusNode
         let base = tree.displayPath(focus)
-        let entries = TreemapLayout.entries(for: tree, parent: focus, unaccountedBytes: unaccountedBytes, limit: 60)
+        let entries = TreemapLayout.entries(for: tree, parent: focus, unaccountedBytes: unaccounted, limit: 60)
         return entries.enumerated().map { index, entry in
             switch entry.content {
             case .node(let node):

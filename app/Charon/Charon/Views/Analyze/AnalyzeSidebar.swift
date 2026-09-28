@@ -14,8 +14,13 @@ struct AnalyzeSidebar: View {
             diskSummary
             ScrollView {
                 LazyVStack(spacing: 6) {
-                    ForEach(model.levelEntries) { entry in
-                        row(entry)
+                    if let peeked = model.peekedNode, let tree = model.currentScan?.tree {
+                        PeekList(tree: tree, node: peeked, entries: model.entries(of: peeked),
+                                 tint: Theme.treemapColor(navigator.peekColorIndex))
+                    } else {
+                        ForEach(model.levelEntries) { entry in
+                            row(entry)
+                        }
                     }
                     if let volume = model.currentTarget?.isFolder == false ? model.currentVolume : nil {
                         freeSpace(volume)
@@ -169,5 +174,61 @@ struct NodeActions: View {
                 model.requestOffload(path: path, knownBytes: size)
             }
         }
+    }
+}
+
+/// What the rings are hovering: the folder's name and size, then its contents. Display only; moving the pointer
+/// here ends the hover and the regular list comes back.
+private struct PeekList: View {
+    let tree: DiskTree
+    let node: DiskTree.NodeID
+    let entries: [LevelEntry]
+    let tint: Color
+
+    /// Like DaisyDisk: list what matters (1% of the folder or more, at most 12), fold the rest into one line.
+    private var shown: [LevelEntry] {
+        let total = max(tree.size(node), 1)
+        return Array(entries.filter { $0.size * 100 >= total && $0.kind != .others }.prefix(12))
+    }
+
+    private var smallerBytes: Int64 {
+        let shownIDs = Set(shown.map(\.id))
+        return entries.filter { !shownIDs.contains($0.id) }.reduce(0) { $0 + $1.size }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            HStack(spacing: Theme.Spacing.sm) {
+                Circle().fill(tint).frame(width: 12, height: 12)
+                Text(tree.name(node)).font(.system(size: 17, weight: .medium)).lineLimit(1).truncationMode(.middle)
+                Spacer()
+                Text(ByteSize.format(tree.size(node))).font(.system(size: 17, weight: .medium, design: .rounded))
+            }
+            .padding(.bottom, Theme.Spacing.xs)
+            ForEach(shown) { entry in
+                HStack(spacing: Theme.Spacing.sm) {
+                    Circle()
+                        .fill(entry.kind == .others || entry.kind == .looseFiles ? Theme.treemapNeutral : tint)
+                        .frame(width: 7, height: 7)
+                    Text(entry.title).font(.system(size: 13)).lineLimit(1).truncationMode(.middle)
+                        .foregroundStyle(entry.isNode ? Theme.textPrimary : Theme.textSecondary)
+                    Spacer()
+                    Text(ByteSize.format(entry.size)).font(.monoCaption).foregroundStyle(Theme.textSecondary)
+                }
+            }
+            if smallerBytes > 0 {
+                HStack(spacing: Theme.Spacing.sm) {
+                    Circle().fill(Theme.treemapNeutral).frame(width: 7, height: 7)
+                    Text("Smaller items").font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+                    Spacer()
+                    Text(ByteSize.format(smallerBytes)).font(.monoCaption).foregroundStyle(Theme.textSecondary)
+                }
+            }
+            if entries.isEmpty {
+                Text(tree.isDirectory(node) ? "Empty folder" : "File").font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .padding(Theme.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

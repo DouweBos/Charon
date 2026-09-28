@@ -50,6 +50,7 @@ struct SunburstView: View {
 
     /// Room outside the last ring for the "more inside" rim.
     private let rimSpace: CGFloat = 7
+    private let pulsePeriod: Double = 1.1
 
     var body: some View {
         GeometryReader { proxy in
@@ -73,12 +74,20 @@ struct SunburstView: View {
                         for segment in segments { draw(segment, geometry: geometry, in: &context) }
                     }
                     .equatable()
-                    Canvas { context, _ in
-                        for segment in segments where segment.id == hoveredID || isSelected(segment) {
-                            context.stroke(path(segment, geometry: geometry), with: .color(Theme.textPrimary), lineWidth: 2)
+                    // Hovered segments breathe between full and half strength instead of getting an outline.
+                    let highlighted = segments.filter { $0.id == hoveredID || isSelected($0) }
+                    if !highlighted.isEmpty {
+                        TimelineView(.animation) { timeline in
+                            Canvas { context, _ in
+                                let phase = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: pulsePeriod) / pulsePeriod
+                                let fade = Theme.hoverPulseDepth * (1 - cos(phase * 2 * .pi)) / 2
+                                for segment in highlighted {
+                                    context.fill(path(segment, geometry: geometry), with: .color(Theme.background.opacity(fade)))
+                                }
+                            }
                         }
+                        .allowsHitTesting(false)
                     }
-                    .allowsHitTesting(false)
                     centerLabel(hovered: hovered)
                         .frame(width: geometry.hole * 1.8, height: geometry.hole * 1.8)
                         .position(geometry.center)
@@ -92,9 +101,14 @@ struct SunburstView: View {
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let point):
-                        let id = hit(point, segments: segments, geometry: geometry)?.id
-                        if id != hoveredID { hoveredID = id }
-                    case .ended: hoveredID = nil
+                        let segment = hit(point, segments: segments, geometry: geometry)
+                        if segment?.id != hoveredID {
+                            hoveredID = segment?.id
+                            navigator.peek(segment?.node.map { tree.displayPath($0) }, colorIndex: segment?.colorIndex ?? 0)
+                        }
+                    case .ended:
+                        hoveredID = nil
+                        navigator.peek(nil)
                     }
                 }
                 .onTapGesture { point in
@@ -114,6 +128,7 @@ struct SunburstView: View {
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Rings of \(tree.displayPath(focus))")
+                .onDisappear { navigator.peek(nil) }
 
                 Text(caption(hovered))
                     .font(.monoCaption)

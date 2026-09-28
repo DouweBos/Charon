@@ -123,6 +123,17 @@ final class AppNavigator {
         selectedPath = path
     }
 
+    /// Folder under the pointer in the rings; the sidebar shows its contents while it's set.
+    private(set) var peekPath: String?
+    /// The peeked segment's color, so the sidebar's dots match the rings.
+    private(set) var peekColorIndex = 0
+
+    func peek(_ path: String?, colorIndex: Int = 0) {
+        guard peekPath != path else { return }
+        peekPath = path
+        peekColorIndex = colorIndex
+    }
+
     func hover(_ path: String?) {
         hoveredPath = path
     }

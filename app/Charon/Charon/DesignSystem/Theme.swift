@@ -50,6 +50,9 @@ enum Theme {
         return base.opacity(max(1 - 0.12 * Double(depth - 1), 0.4))
     }
 
+    /// How far a hovered rings segment fades toward the background at the bottom of its pulse (50%).
+    static let hoverPulseDepth = 0.5
+
     static let tileHoverStroke = textOnTile.opacity(0.85)
     static let tileSecondaryText = textOnTile.opacity(0.75)
     static let tileHeaderText = textPrimary
