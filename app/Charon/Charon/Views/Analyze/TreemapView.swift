@@ -128,7 +128,7 @@ struct TreemapView: View {
                     if let hovered, let node = hovered.node {
                         NodeActions(
                             path: tree.displayPath(node), size: tree.size(node),
-                            isDirectory: tree.isDirectory(node), canOpen: !tree.children(node).isEmpty
+                            isDirectory: tree.isDirectory(node), canOpen: tree.canOpen(node)
                         )
                     }
                 }
@@ -159,7 +159,7 @@ struct TreemapView: View {
             break
         }
         guard let node = tile.node else { return }
-        if tree.isDirectory(node), !tree.children(node).isEmpty {
+        if tree.canOpen(node) {
             navigator.focus(tree.displayPath(node))
         } else {
             navigator.select(tree.displayPath(node))

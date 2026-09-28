@@ -40,6 +40,18 @@ struct TreemapLayoutTests {
         #expect(nested.allSatisfy { library.rect.contains($0.rect) })
     }
 
+    @Test func appBundlesAreOneTile() {
+        var tree = DiskTree(rootPath: "/data", displayRootPath: "/")
+        let app = tree.addNode(name: "Cinebench.app", parent: DiskTree.root, kind: .directory)
+        let contents = tree.addNode(name: "Contents", parent: app, kind: .directory)
+        let resources = tree.addNode(name: "Resources", parent: contents, kind: .directory)
+        tree.accumulate(into: resources, size: 500, privateSize: 500, items: 1)
+        let tiles = TreemapLayout.tiles(for: tree, focus: DiskTree.root, in: CGRect(x: 0, y: 0, width: 800, height: 600))
+        #expect(tiles.map(\.title) == ["Cinebench.app"])
+        #expect(!tiles[0].isContainer)
+        #expect(!tree.canOpen(app))
+    }
+
     @Test func hitTestReturnsInnermostTile() {
         let tree = sampleTree()
         let tiles = TreemapLayout.tiles(for: tree, focus: DiskTree.root, in: CGRect(x: 0, y: 0, width: 800, height: 600))

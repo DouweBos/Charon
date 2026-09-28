@@ -129,7 +129,7 @@ struct SunburstView: View {
                     if let node = hovered?.node {
                         NodeActions(
                             path: tree.displayPath(node), size: tree.size(node),
-                            isDirectory: tree.isDirectory(node), canOpen: !tree.children(node).isEmpty
+                            isDirectory: tree.isDirectory(node), canOpen: tree.canOpen(node)
                         )
                     }
                 }

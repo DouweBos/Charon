@@ -104,7 +104,7 @@ public enum TreemapLayout {
             let target = chain[chain.count - 1]
             return Item(
                 content: .node(target), title: tree.collapsedName(chain), size: tree.size(child),
-                nestable: tree.isDirectory(target) && !tree.children(target).isEmpty
+                nestable: tree.canOpen(target)
             )
         }
         if items.count > limit {

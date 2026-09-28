@@ -125,12 +125,22 @@ public struct DiskTree: Sendable {
     public func collapsedChain(from id: NodeID) -> [NodeID] {
         var chain = [id]
         var current = id
-        while let only = childLists[Int(current)].first, childLists[Int(current)].count == 1,
+        while !isApp(current), let only = childLists[Int(current)].first, childLists[Int(current)].count == 1,
               kinds[Int(only)] == .directory, looseFilesSize(current) * 100 <= max(sizes[Int(current)], 1) {
             chain.append(only)
             current = only
         }
         return chain
+    }
+
+    /// App bundles are shown as one item, like in Finder: nothing inside one can be removed on its own.
+    public func isApp(_ id: NodeID) -> Bool {
+        kinds[Int(id)] == .directory && names[Int(id)].hasSuffix(".app")
+    }
+
+    /// A folder that can be opened to show what's inside.
+    public func canOpen(_ id: NodeID) -> Bool {
+        kinds[Int(id)] == .directory && !isApp(id) && !childLists[Int(id)].isEmpty
     }
 
     public func collapsedName(_ chain: [NodeID]) -> String {
