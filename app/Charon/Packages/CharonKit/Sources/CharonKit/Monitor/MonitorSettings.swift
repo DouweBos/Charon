@@ -1,4 +1,4 @@
-// Stats/MonitorSettings.swift
+// Monitor/MonitorSettings.swift
 // CharonKit
 //
 // Settings the menu bar monitor reads from Charon's defaults domain, shared by both apps.

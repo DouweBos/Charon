@@ -29,7 +29,7 @@ Charon is the app name only. Features use plain names, never mythology:
 ```
 app/Charon/
 ├── Charon.xcodeproj            # synchronized folders: new files under Charon/ are picked up automatically
-├── Packages/CharonKit/         # engine package: Scanner/, Treemap/, Offload/, Cleanup/, Volumes/, Stats/, Support/
+├── Packages/CharonKit/         # engine package: Scanner/, Treemap/, Offload/, Cleanup/, Startup/, Volumes/, Monitor/, Support/
 ├── Charon/                     # App/, Navigation/, ViewModels/, Views/, DesignSystem/, Utilities/
 ├── CharonMonitor/              # menu bar login item, embedded in Charon.app
 ├── CharonScanTool/             # charon-scan: read-only scanner run as root for Scan as Administrator

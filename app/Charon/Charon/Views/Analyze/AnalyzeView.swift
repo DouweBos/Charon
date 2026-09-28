@@ -10,7 +10,6 @@ import SwiftUI
 struct AnalyzeView: View {
     @Environment(AppModel.self) private var model
     @Environment(AppNavigator.self) private var navigator
-    @AppStorage(AppSettings.showStats) private var showStats = true
 
     var body: some View {
         VStack(spacing: Theme.Spacing.lg) {
@@ -23,10 +22,6 @@ struct AnalyzeView: View {
                     TreemapPanel()
                     CollectorBar()
                 }
-            }
-            if showStats {
-                StatsRow()
-                    .frame(height: 150)
             }
         }
         .padding(.horizontal, Theme.Spacing.xl)

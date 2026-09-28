@@ -11,7 +11,6 @@ enum AppSettings {
     static let measurePrivateSize = "scan.measurePrivateSize"
     static let rememberScans = "scan.rememberResults"
     static let treemapDepth = "treemap.depth"
-    static let showStats = "stats.visible"
     static let driveVolumeID = "offload.driveVolumeID"
     static let driveFolder = "offload.driveFolder"
     static let recentFolders = "scan.recentFolders"
@@ -26,7 +25,6 @@ enum AppSettings {
             measurePrivateSize: false,
             rememberScans: true,
             treemapDepth: 3,
-            showStats: true,
             driveFolder: "Charon"
         ])
     }

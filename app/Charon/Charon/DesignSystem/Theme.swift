@@ -20,11 +20,7 @@ enum Theme {
     static let warning = Color(.warning)
     static let danger = Color(.danger)
 
-    static let statCPU = Color(.statCPU)
-    static let statMemory = Color(.statMemory)
-    static let statDisk = Color(.statDisk)
-    static let statBattery = Color(.statBattery)
-    static let statNetwork = Color(.statNetwork)
+    static let externalDrive = Color(.externalDrive)
 
     static let markBackgroundTop = Color(.markBackgroundTop)
     static let markBackgroundBottom = Color(.markBackgroundBottom)

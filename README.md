@@ -19,7 +19,6 @@ A native macOS disk analyzer built with SwiftUI. It shows where the space on any
 - Offloaded directory tracking: Offloaded, Disconnected (drive unplugged), Drive moved, Broken; Move back and Relink
 - Crash-safe journal: interrupted offloads finish or roll back on next launch
 - Menu bar monitor (login item): free space at a glance, warnings when it runs low, and alerts when a drive with offloaded folders disconnects
-- Live CPU, memory, disk, battery and network cards
 
 ## Keyboard
 

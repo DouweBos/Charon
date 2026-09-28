@@ -12,7 +12,6 @@ struct SettingsView: View {
     @AppStorage(AppSettings.measurePrivateSize) private var measurePrivateSize = false
     @AppStorage(AppSettings.rememberScans) private var rememberScans = true
     @AppStorage(AppSettings.treemapDepth) private var treemapDepth = 3
-    @AppStorage(AppSettings.showStats) private var showStats = true
     @AppStorage(AppSettings.driveFolder) private var driveFolder = "Charon"
     @AppStorage(MonitorSettings.lowGigabytes) private var lowGigabytes = 20
     @AppStorage(MonitorSettings.lowPercent) private var lowPercent = 5
@@ -56,7 +55,6 @@ struct SettingsView: View {
                     Text("3 levels").tag(3)
                     Text("4 levels").tag(4)
                 }
-                Toggle("Show live stats", isOn: $showStats)
             }
             Section("Offload") {
                 TextField("Folder on the external drive", text: $driveFolder)

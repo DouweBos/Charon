@@ -20,7 +20,6 @@ struct CharonApp: App {
                 .environment(model.volumes)
                 .environment(model.analyze)
                 .environment(model.offload)
-                .environment(model.stats)
                 .environment(model.collector)
                 .environment(model.clean)
                 .environment(model.uninstall)

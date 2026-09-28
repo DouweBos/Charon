@@ -16,7 +16,7 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 | `Volumes/` | `VolumeCatalog`, `VolumeInfo`, `VolumeResolving`, `APFSInspector` (hidden space from `diskutil apfs list` and `tmutil`) |
 | `Cleanup/` | `TrashPolicy` (what may be trashed), `CollectorSet`, `CleanCatalog`, `CleanResolver`, `CleanMeasurer`, `AppInventory`, `DuplicateFinder` |
 | `Startup/` | `LaunchItemInventory` |
-| `Stats/` | `SystemSampler`, `LowSpacePolicy`, `MonitorSettings` |
+| `Monitor/` | `LowSpacePolicy`, `MonitorSettings` (shared with the menu bar monitor) |
 | `Support/` | `ByteSize` formatting, POSIX helpers |
 
 ### Scanning
@@ -34,8 +34,8 @@ Filesystem ─→ CharonKit (engine, no UI imports) ─→ ViewModels (@MainActo
 |---|---|
 | `App/` | `CharonApp`, `AppModel` (owns and wires everything), `CharonCommands` |
 | `Navigation/` | `AppNavigator`: tab, volume, focus path, selection, history |
-| `ViewModels/` | One per area: Analyze, Offload, Volumes, Stats, HiddenSpace, Collector, Clean, Uninstall, Optimize, Duplicates; `LevelEntries`, `ScanTarget` |
-| `Views/` | `Root/`, `Analyze/`, `Offload/`, `Clean/`, `Uninstall/`, `Optimize/`, `Stats/`, `Settings/` |
+| `ViewModels/` | One per area: Analyze, Offload, Volumes, HiddenSpace, Collector, Clean, Uninstall, Optimize, Duplicates; `LevelEntries`, `ScanTarget` |
+| `Views/` | `Root/`, `Analyze/`, `Offload/`, `Clean/`, `Uninstall/`, `Optimize/`, `Settings/` |
 | `DesignSystem/` | `Theme` tokens and reusable components, each with a `#Preview` |
 | `Utilities/` | `AppSettings`, `SystemIntegration` (Finder, Full Disk Access), logging |
 

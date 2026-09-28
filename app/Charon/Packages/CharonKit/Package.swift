@@ -9,10 +9,7 @@ let package = Package(
         .library(name: "CharonKit", targets: ["CharonKit"])
     ],
     targets: [
-        .target(
-            name: "CharonKit",
-            linkerSettings: [.linkedFramework("IOKit")]
-        ),
+        .target(name: "CharonKit"),
         .testTarget(name: "CharonKitTests", dependencies: ["CharonKit"])
     ]
 )

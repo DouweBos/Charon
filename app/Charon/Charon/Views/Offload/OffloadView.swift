@@ -115,7 +115,7 @@ struct DriveCard: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             Label("External Drive", systemImage: "externaldrive.fill")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Theme.statDisk)
+                .foregroundStyle(Theme.externalDrive)
             Button(action: showDriveMenu) {
                 HStack(spacing: Theme.Spacing.xs) {
                     Text(drive?.name ?? (offload.driveVolumeID == nil ? "Choose a drive" : "Not connected"))

@@ -27,7 +27,7 @@ struct AnalyzeSidebar: View {
                             DirectoryRow(
                                 name: record.name,
                                 detail: "\(ByteSize.format(record.bytes)) · on \(record.drive.name)",
-                                symbol: "externaldrive", tint: Theme.statDisk, showsChevron: false
+                                symbol: "externaldrive", tint: Theme.externalDrive, showsChevron: false
                             )
                             .onTapGesture { navigator.selectTab(.offload) }
                             .help("Moved to \(record.drive.name). Click to see it in Offload.")

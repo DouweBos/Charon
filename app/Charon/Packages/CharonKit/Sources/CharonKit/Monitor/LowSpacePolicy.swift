@@ -1,4 +1,4 @@
-// Stats/LowSpacePolicy.swift
+// Monitor/LowSpacePolicy.swift
 // CharonKit
 //
 // Decides when free space is worth a notification. Levels only rise on crossing a threshold and only fall

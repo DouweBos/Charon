@@ -9,7 +9,6 @@ All settings are in UserDefaults (`com.houwert.Charon`) and, unless noted, in th
 | `scan.measurePrivateSize` | false | Scanning | Also measure bytes not shared with APFS clones. Roughly doubles scan time; local Time Machine snapshots make it read low. |
 | `files.ageFilterDays` | 0 | Largest Files | Only list files not opened for this many days (0 = any). Uses Spotlight's last-opened date, falling back to last modified. |
 | `treemap.depth` | 3 | Treemap | Nesting levels drawn at once (1–4). Levels where one folder holds 85% or more (like Users → your home) don't count, so the map looks past them. |
-| `stats.visible` | true | Treemap | Show the live stat cards under Analyze. |
 | `offload.driveFolder` | `Charon` | Offload | Folder at the root of the external drive that holds offloaded directories. Takes effect after relaunch. |
 | `offload.driveVolumeID` | none | Offload tab | The chosen external drive (volume UUID). Set from the external drive card, not the Settings window. |
 | `scan.excludedPaths` | empty | Skipped folders | Folders every scan skips (also via Skip in Future Scans in Analyze). Their space shows up in System & other. |

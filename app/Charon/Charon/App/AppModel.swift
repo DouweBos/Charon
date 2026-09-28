@@ -16,7 +16,6 @@ final class AppModel {
     let volumes = VolumesViewModel()
     let analyze = AnalyzeViewModel()
     let offload = OffloadViewModel()
-    let stats = StatsViewModel()
     let hiddenSpace = HiddenSpaceViewModel()
     let collector = CollectorViewModel()
     let clean = CleanViewModel()
