@@ -30,6 +30,9 @@ final class CleanViewModel {
 
     /// Called with paths moved to the Trash, so scans can drop them.
     @ObservationIgnored var onTrashed: (([String]) -> Void)?
+    /// Git repositories from the startup disk scan, or nil when there's no scan yet.
+    @ObservationIgnored var repositories: (() -> [String]?)?
+    @ObservationIgnored private var worktreeRepositories: [String: String] = [:]
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private let measurer = CleanMeasurer()
 
@@ -61,10 +64,15 @@ final class CleanViewModel {
         isMeasuring = true
         rows = CleanCatalog.all.map { Row(category: $0) }
         let measurer = measurer
+        let repositories = repositories?()
         task = Task {
             defer { isMeasuring = false }
             for category in CleanCatalog.all {
                 guard !Task.isCancelled else { return }
+                if category.mode == .gitWorktrees {
+                    await measureWorktrees(category, repositories: repositories)
+                    continue
+                }
                 do {
                     let items = try await measurer.measure(category)
                     update(category.id) { $0.items = items }
@@ -105,6 +113,9 @@ final class CleanViewModel {
                     Logger.volumes.error("Clean skipped \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 }
             }
+            // Worktrees moved to the Trash still have entries in their repository; let git drop them.
+            let repositories = Set(trashed.compactMap { worktreeRepositories[$0] })
+            for repository in repositories { await GitWorktreeFinder().prune(repository) }
             let skipped = urls.count - trashed.count
             message = "Moved \(trashed.count) items to the Trash" + (skipped > 0 ? ", skipped \(skipped) in use or protected." : ".")
                 + " Empty the Trash to free the space."
@@ -122,6 +133,25 @@ final class CleanViewModel {
             message = "Finder couldn't empty the Trash: \(error[NSAppleScript.errorMessage] as? String ?? "unknown error")"
         }
         measure()
+    }
+
+    private func measureWorktrees(_ category: CleanCategory, repositories: [String]?) async {
+        guard let repositories else {
+            update(category.id) { $0.error = "Scan the startup disk in Analyze first; that's where repositories are found." }
+            return
+        }
+        let finder = GitWorktreeFinder()
+        var items: [CleanItem] = []
+        for repository in repositories {
+            guard !Task.isCancelled else { return }
+            for worktree in await finder.staleWorktrees(in: repository) {
+                worktreeRepositories[worktree.path] = repository
+                let repositoryName = (repository as NSString).lastPathComponent
+                let detail = [worktree.branch, worktree.reason, repositoryName].compactMap { $0 }.joined(separator: " · ")
+                items.append(CleanItem(url: URL(fileURLWithPath: worktree.path), bytes: worktree.bytes, detail: detail))
+            }
+        }
+        update(category.id) { $0.items = items.sorted { $0.bytes > $1.bytes } }
     }
 
     private func update(_ id: String, _ change: (inout Row) -> Void) {

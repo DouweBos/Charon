@@ -106,7 +106,12 @@ struct CleanRowView: View {
                 VStack(spacing: 2) {
                     ForEach(items.prefix(25)) { item in
                         HStack {
-                            Text(item.url.lastPathComponent).font(.monoCaption).lineLimit(1).truncationMode(.middle)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(item.url.lastPathComponent).font(.monoCaption).lineLimit(1).truncationMode(.middle)
+                                if let detail = item.detail {
+                                    Text(detail).font(.system(size: 11)).foregroundStyle(Theme.textSecondary).lineLimit(1)
+                                }
+                            }
                             Spacer()
                             Text(ByteSize.format(item.bytes)).font(.monoCaption).foregroundStyle(Theme.textSecondary)
                             Button { SystemIntegration.revealInFinder(item.url.path) } label: { Image(systemName: "magnifyingglass") }

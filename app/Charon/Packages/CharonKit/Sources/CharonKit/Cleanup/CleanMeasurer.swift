@@ -9,7 +9,15 @@ import Foundation
 public struct CleanItem: Sendable, Hashable, Identifiable {
     public var url: URL
     public var bytes: Int64
+    /// Extra context shown under the name, e.g. "feature/login · Merged into main".
+    public var detail: String?
     public var id: String { url.path }
+
+    public init(url: URL, bytes: Int64, detail: String? = nil) {
+        self.url = url
+        self.bytes = bytes
+        self.detail = detail
+    }
 }
 
 public struct CleanMeasurer: Sendable {
@@ -23,6 +31,8 @@ public struct CleanMeasurer: Sendable {
     public func measure(_ category: CleanCategory) async throws -> [CleanItem] {
         var items: [CleanItem] = []
         switch category.mode {
+        case .gitWorktrees:
+            break
         case .itself, .emptyTrash:
             for url in category.paths.flatMap(resolver.matches) {
                 items.append(CleanItem(url: url, bytes: try await Self.size(of: url)))

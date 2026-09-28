@@ -28,6 +28,8 @@ public struct CleanCategory: Sendable, Hashable, Identifiable {
         case itself
         /// Handled by Finder's Empty Trash.
         case emptyTrash
+        /// Linked git worktrees already merged into their default branch; found from the repositories in a scan.
+        case gitWorktrees
     }
 
     public var id: String
@@ -70,6 +72,12 @@ public enum CleanCatalog {
             detail: "Dyld and runtime caches for simulators.",
             symbol: "ipad.and.iphone", group: .developer, safety: .regenerated, mode: .contents,
             paths: ["~/Library/Developer/CoreSimulator/Caches"]
+        ),
+        CleanCategory(
+            id: "git.mergedWorktrees", title: "Merged git worktrees",
+            detail: "Worktrees whose branch is already in main and that have no uncommitted changes. "
+                + "Found in repositories from your last startup disk scan.",
+            symbol: "arrow.triangle.branch", group: .developer, safety: .review, mode: .gitWorktrees, paths: []
         ),
         CleanCategory(
             id: "xcode.archives", title: "Xcode archives",
@@ -182,7 +190,7 @@ public struct CleanResolver: Sendable {
     public func items(for category: CleanCategory) -> [URL] {
         let roots = category.paths.flatMap(matches)
         switch category.mode {
-        case .itself, .emptyTrash:
+        case .itself, .emptyTrash, .gitWorktrees:
             return roots
         case .contents:
             return roots.flatMap { contents(of: $0, excludes: category.excludes) }

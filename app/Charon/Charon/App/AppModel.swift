@@ -33,6 +33,10 @@ final class AppModel {
         offload.onOffloaded = { [weak self] path in self?.offloaded(path) }
         collector.onTrashed = { [weak self] paths in self?.trashed(paths) }
         clean.onTrashed = { [weak self] paths in self?.trashed(paths) }
+        clean.repositories = { [weak self] in
+            guard let self, let boot = self.volumes.bootVolume, let tree = self.analyze.state(for: boot.id)?.tree else { return nil }
+            return GitWorktreeFinder.repositories(in: tree)
+        }
         Task { await offload.reconcile() }
         if !hasFullDiskAccess, !UserDefaults.standard.bool(forKey: AppSettings.accessPromptShown) {
             UserDefaults.standard.set(true, forKey: AppSettings.accessPromptShown)
