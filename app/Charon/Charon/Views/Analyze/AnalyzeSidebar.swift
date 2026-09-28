@@ -195,9 +195,14 @@ private struct PeekList: View {
     }
 
     private var headerTitle: String {
-        if isLooseFiles { return "Files in \(tree.name(node))" }
-        if groupedBelow != nil { return "Smaller items in \(tree.name(node))" }
+        if isLooseFiles { return "Files" }
+        if groupedBelow != nil { return "Smaller items" }
         return tree.name(node)
+    }
+
+    /// The folder a group belongs to, on its own line so the title doesn't get squeezed.
+    private var headerSubtitle: String? {
+        isLooseFiles || groupedBelow != nil ? "in \(tree.name(node))" : nil
     }
 
     private var headerSize: Int64 {
@@ -221,11 +226,18 @@ private struct PeekList: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            HStack(spacing: Theme.Spacing.sm) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.sm) {
                 Circle().fill(tint).frame(width: 12, height: 12)
-                Text(headerTitle).font(.system(size: 17, weight: .medium)).lineLimit(1).truncationMode(.middle)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(headerTitle).font(.system(size: 17, weight: .medium)).lineLimit(1).truncationMode(.middle)
+                    if let headerSubtitle {
+                        Text(headerSubtitle).font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
+                            .lineLimit(1).truncationMode(.middle)
+                    }
+                }
                 Spacer()
                 Text(ByteSize.format(headerSize)).font(.system(size: 17, weight: .medium, design: .rounded))
+                    .layoutPriority(1)
             }
             .padding(.bottom, Theme.Spacing.xs)
             ForEach(shown) { entry in
