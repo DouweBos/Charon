@@ -7,7 +7,7 @@ import CharonKit
 import SwiftUI
 
 private extension CGSize {
-    static let unbounded = CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+    static let unbounded = CGSize(width: 10_000, height: 1_000)
 }
 
 struct TreemapPanel: View {
@@ -174,10 +174,12 @@ struct TreemapView: View {
             Text($0).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.tileHeaderText)
         }) else { return }
         let origin = CGPoint(x: tile.rect.minX + 8, y: tile.rect.minY + 4)
-        context.draw(title, at: origin, anchor: .topLeading)
+        var clipped = context
+        clipped.clip(to: Path(CGRect(x: tile.rect.minX, y: tile.rect.minY, width: tile.rect.width - 6, height: 20)))
+        clipped.draw(title, at: origin, anchor: .topLeading)
         if showsSize {
             let titleWidth = title.measure(in: .unbounded).width
-            context.draw(size, at: CGPoint(x: origin.x + titleWidth + 8, y: origin.y + 1), anchor: .topLeading)
+            clipped.draw(size, at: CGPoint(x: origin.x + titleWidth + 8, y: origin.y + 1), anchor: .topLeading)
         }
     }
 
@@ -187,7 +189,7 @@ struct TreemapView: View {
         let large = rect.width > 220 && rect.height > 120
         let symbol = tile.node.map { tree.isDirectory($0) ? "folder" : "doc" } ?? (tile.content == .unaccounted ? "gearshape" : "doc.on.doc")
         let titleSize: CGFloat = large ? 20 : 12
-        let available = rect.width - 12
+        let available = rect.width - 20
         // Prefer icon + name; drop the icon before cutting the name short.
         let title = fitted(tile.title, width: available, in: context, minimumCharacters: 6) {
             Text("\(Image(systemName: symbol)) \($0)").font(.system(size: titleSize, weight: .medium)).foregroundStyle(Theme.textOnTile)
@@ -202,9 +204,12 @@ struct TreemapView: View {
         )
         let showsSize = rect.height > (large ? 70 : 40) && size.measure(in: .unbounded).width <= available
         let center = CGPoint(x: rect.midX, y: rect.midY - (showsSize ? titleSize * 0.6 : 0))
-        context.draw(title, at: center, anchor: .center)
+        // Backstop: never paint outside the tile, even if a measurement is off.
+        var clipped = context
+        clipped.clip(to: Path(rect.insetBy(dx: 2, dy: 2)))
+        clipped.draw(title, at: center, anchor: .center)
         if showsSize {
-            context.draw(size, at: CGPoint(x: rect.midX, y: center.y + titleSize + 4), anchor: .center)
+            clipped.draw(size, at: CGPoint(x: rect.midX, y: center.y + titleSize + 4), anchor: .center)
         }
     }
 
