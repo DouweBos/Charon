@@ -22,6 +22,13 @@ struct ScanState {
     var isAdministrator = false
     /// What the scan is expected to find: the last scan's total, else the disk's used space. Nil when unknown.
     var expectedBytes: Int64?
+    /// Restricted folders the scan before this one found, kept on screen while an administrator scan runs.
+    var previousUnreadable: Int64 = 0
+
+    /// Restricted folders to report: the running administrator scan hasn't counted its own yet.
+    var unreadableDirectories: Int64 {
+        isScanning && isAdministrator ? previousUnreadable : progress.unreadableDirectories
+    }
 
     var isScanning: Bool { phase == .scanning }
 
@@ -139,6 +146,7 @@ final class AnalyzeViewModel {
         state.phase = .scanning
         state.isAdministrator = true
         state.expectedBytes = previous?.tree.map { $0.size(DiskTree.root) } ?? target.volume?.usedBytes
+        state.previousUnreadable = previous?.progress.unreadableDirectories ?? 0
         state.progress = ScanProgress()
         scans[id] = state
 

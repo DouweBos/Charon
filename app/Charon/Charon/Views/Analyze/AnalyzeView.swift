@@ -150,17 +150,21 @@ struct RestrictedNote: View {
 
     var body: some View {
         if model.hasFullDiskAccess || model.dismissedAccessBanner,
-           let scan = model.currentScan, !scan.isScanning, scan.progress.unreadableDirectories > 0 {
+           let scan = model.currentScan, !scan.isScanning || scan.isAdministrator, scan.unreadableDirectories > 0 {
             HStack(spacing: Theme.Spacing.sm) {
                 Image(systemName: "lock")
-                Text("\(scan.progress.unreadableDirectories.formatted()) folders are restricted to macOS or other users;"
+                Text("\(scan.unreadableDirectories.formatted()) folders are restricted to macOS or other users;"
                      + " their space is in System & other.")
                     .lineLimit(1).truncationMode(.tail)
-                Button(scan.isAdministrator ? "Show" : "Scan as Administrator") {
-                    if scan.isAdministrator { navigator.present(.restrictedFolders) } else { model.rescanCurrentAsAdministrator() }
+                if scan.isScanning {
+                    Text("Scanning as administrator…")
+                } else {
+                    Button(scan.isAdministrator ? "Show" : "Scan as Administrator") {
+                        if scan.isAdministrator { navigator.present(.restrictedFolders) } else { model.rescanCurrentAsAdministrator() }
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Theme.accent)
                 }
-                .buttonStyle(.borderless)
-                .foregroundStyle(Theme.accent)
                 Spacer(minLength: 0)
             }
             .font(.system(size: 12))
