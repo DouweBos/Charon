@@ -26,9 +26,10 @@ enum Theme {
     static let statBattery = Color(.statBattery)
     static let statNetwork = Color(.statNetwork)
 
-    static let markBackground = Color(.markBackground)
-    static let markMoon = Color(.markMoon)
-    static let markSilhouette = Color(.markSilhouette)
+    static let markBackgroundTop = Color(.markBackgroundTop)
+    static let markBackgroundBottom = Color(.markBackgroundBottom)
+    static let markGlyphTop = Color(.markGlyphTop)
+    static let markGlyphBottom = Color(.markGlyphBottom)
 
     static let treemapPalette: [Color] = [
         Color(.treemap1), Color(.treemap2), Color(.treemap3), Color(.treemap4),
