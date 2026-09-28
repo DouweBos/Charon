@@ -100,23 +100,31 @@ struct DriveCard: View {
 
     private var drive: VolumeInfo? { volumes.volume(offload.driveVolumeID) }
 
+    private func showDriveMenu() {
+        let items = volumes.driveCandidates.map { volume in
+            PopUpMenu.Item(
+                title: "\(volume.name) · \(ByteSize.format(volume.availableBytes)) free", symbol: "externaldrive",
+                isChecked: volume.id == offload.driveVolumeID
+            ) { offload.selectDrive(volume.id) }
+        }
+        let empty = PopUpMenu.Item(title: "Connect an external drive", symbol: "cable.connector") {}
+        PopUpMenu.show([PopUpMenu.Section(title: "External drives", items: items.isEmpty ? [empty] : items)])
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             Label("External Drive", systemImage: "externaldrive.fill")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Theme.statDisk)
-            Menu {
-                ForEach(volumes.driveCandidates) { volume in
-                    Button("\(volume.name) · \(ByteSize.format(volume.availableBytes)) free") { offload.selectDrive(volume.id) }
+            Button(action: showDriveMenu) {
+                HStack(spacing: Theme.Spacing.xs) {
+                    Text(drive?.name ?? (offload.driveVolumeID == nil ? "Choose a drive" : "Not connected"))
+                        .font(.system(size: 22, weight: .medium, design: .rounded))
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Theme.textSecondary)
                 }
-                if volumes.driveCandidates.isEmpty {
-                    Text("Connect an external drive")
-                }
-            } label: {
-                Text(drive?.name ?? (offload.driveVolumeID == nil ? "Choose a drive" : "Not connected"))
-                    .font(.system(size: 22, weight: .medium, design: .rounded))
             }
-            .menuStyle(.button)
             .buttonStyle(.plain)
             .fixedSize()
             if let drive {

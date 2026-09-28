@@ -40,24 +40,7 @@ struct AnalyzeSidebar: View {
     }
 
     private var diskSummary: some View {
-        Menu {
-            Section("Disks") {
-                ForEach(model.targets.filter { !$0.isFolder }) { target in
-                    Button { navigator.selectTarget(target.id) } label: {
-                        Label("\(target.name) (\(target.volume.map { ByteSize.capacity($0.totalBytes) } ?? "–"))",
-                              systemImage: target.symbol)
-                    }
-                }
-            }
-            Section("Folders") {
-                ForEach(model.targets.filter(\.isFolder)) { target in
-                    Button { navigator.selectTarget(target.id) } label: {
-                        Label(target.displayRoot, systemImage: target.symbol)
-                    }
-                }
-                Button("Scan Folder…", systemImage: "folder.badge.plus") { model.chooseFolderToScan() }
-            }
-        } label: {
+        Button(action: showTargetMenu) {
             VStack(spacing: Theme.Spacing.sm) {
                 CharonMark().frame(width: 120)
                 Text(title).font(.capacityTitle).lineLimit(1).minimumScaleFactor(0.5)
@@ -75,10 +58,25 @@ struct AnalyzeSidebar: View {
             .foregroundStyle(Theme.textPrimary)
             .contentShape(Rectangle())
         }
-        .menuStyle(.button)
         .buttonStyle(.plain)
-        .menuIndicator(.hidden)
         .help("Choose a disk or folder")
+    }
+
+    private func showTargetMenu() {
+        let current = model.currentTarget?.id
+        let disks = model.targets.filter { !$0.isFolder }.map { target in
+            PopUpMenu.Item(
+                title: target.volume.map { "\(target.name) · \(ByteSize.capacity($0.totalBytes))" } ?? target.name,
+                symbol: target.symbol, isChecked: target.id == current
+            ) { navigator.selectTarget(target.id) }
+        }
+        var folders = model.targets.filter(\.isFolder).map { target in
+            PopUpMenu.Item(title: target.displayRoot, symbol: target.symbol, isChecked: target.id == current) {
+                navigator.selectTarget(target.id)
+            }
+        }
+        folders.append(PopUpMenu.Item(title: "Scan Folder…", symbol: "folder.badge.plus") { model.chooseFolderToScan() })
+        PopUpMenu.show([PopUpMenu.Section(title: "Disks", items: disks), PopUpMenu.Section(title: "Folders", items: folders)])
     }
 
     private var title: String {
