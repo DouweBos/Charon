@@ -575,6 +575,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				CODE_SIGN_ENTITLEMENTS = Charon.entitlements;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Charon asks Finder to empty the Trash when you choose Empty Trash.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -607,6 +608,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				CODE_SIGN_ENTITLEMENTS = Charon.entitlements;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Charon asks Finder to empty the Trash when you choose Empty Trash.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
