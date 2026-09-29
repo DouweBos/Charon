@@ -36,6 +36,7 @@ final class AppModel {
         volumes.onChange = { [weak self] in self?.volumesChanged() }
         offload.onOffloaded = { [weak self] path in self?.offloaded(path) }
         collector.onTrashed = { [weak self] paths in self?.trashed(paths) }
+        collector.offloadedPaths = { [weak self] in Set(self?.offload.records.map(\.originalPath) ?? []) }
         clean.onTrashed = { [weak self] paths in self?.trashed(paths) }
         clean.repositories = { [weak self] in
             guard let self, let boot = self.volumes.bootVolume, let tree = self.analyze.state(for: boot.id)?.tree else { return nil }
@@ -266,10 +267,6 @@ final class AppModel {
             FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
             collect(path: path, bytes: node.flatMap { tree?.size($0) } ?? 0, isDirectory: isDirectory.boolValue)
         }
-    }
-
-    func trashCollected() {
-        collector.confirmTrash(offloadedPaths: Set(offload.records.map(\.originalPath)))
     }
 
     func refreshTrash() {

@@ -33,7 +33,7 @@ Scan your startup disk, any external disk, or any folder, and see it in the way 
 - **System & other**, explained: the macOS volume, VM and recovery, purgeable space and restricted folders.
 - **Scan as Administrator** to measure folders owned by macOS and other users. It's a one-off scan behind the standard password prompt, with nothing left installed.
 
-Scans are fast (`getattrlistbulk` on every core), live while they run, and remembered between launches. Drag anything to the Collector at the bottom, review the total, move it to the Trash, and empty the Trash from the same bar.
+Scans are fast (`getattrlistbulk` on every core), live while they run, and remembered between launches. Drag anything to the Collector at the bottom, review the total, and remove it: a 10-second countdown you can cancel, then a progress bar. Items go to the Trash, or are deleted outright if you turn that on in Settings.
 
 <p align="center">
   <img src="docs/images/map.png" width="820" alt="Charon's Map view">

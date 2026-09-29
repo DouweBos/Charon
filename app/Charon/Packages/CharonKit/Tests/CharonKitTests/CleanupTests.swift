@@ -119,3 +119,28 @@ struct AppInventoryTests {
         #expect(candidates.filter(\.uncertain).map(\.kind).sorted() == ["Caches", "Launch agent"])
     }
 }
+
+struct FileDeleterTests {
+    @Test func deletesNestedFilesAndReportsProgress() throws {
+        let temp = try TempDirectory()
+        try temp.file("doomed/a.bin", bytes: 100_000)
+        try temp.file("doomed/sub/b.bin", bytes: 200_000)
+        var reports: [Int64] = []
+        try FileDeleter.delete(temp.url.appendingPathComponent("doomed")) { reports.append($0) }
+        #expect(!FileManager.default.fileExists(atPath: temp.url.appendingPathComponent("doomed").path))
+        #expect(reports == reports.sorted())
+        #expect((reports.last ?? 0) >= 300_000)
+    }
+
+    @Test func removesSymlinksWithoutFollowingThem() throws {
+        let temp = try TempDirectory()
+        let kept = try temp.file("kept/c.bin", bytes: 1_000)
+        let doomed = try temp.directory("doomed")
+        try FileManager.default.createSymbolicLink(
+            at: doomed.appendingPathComponent("link"), withDestinationURL: temp.url.appendingPathComponent("kept")
+        )
+        try FileDeleter.delete(doomed)
+        #expect(!FileManager.default.fileExists(atPath: doomed.path))
+        #expect(FileManager.default.fileExists(atPath: kept.path))
+    }
+}

@@ -15,27 +15,24 @@ struct CollectorBar: View {
 
     var body: some View {
         HStack(spacing: Theme.Spacing.md) {
-            Image(systemName: collector.isEmpty ? "tray" : "tray.full").foregroundStyle(Theme.accent)
-            if collector.isEmpty, collector.message == nil {
-                Text("Drag files and folders here to collect them")
-                    .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+            switch collector.phase {
+            case .countdown(let remaining):
+                CountdownRing(remaining: remaining, total: CollectorViewModel.countdownSeconds)
+                Text(deletePermanently
+                    ? "Deleting \(collector.items.count) items (\(ByteSize.format(collector.totalBytes))) in \(remaining) s"
+                    : "Moving \(collector.items.count) items (\(ByteSize.format(collector.totalBytes))) to the Trash in \(remaining) s")
+                    .font(.system(size: 13)).monospacedDigit()
                 Spacer()
-            } else if let message = collector.message {
-                Text(message).font(.system(size: 13)).lineLimit(2)
-                Spacer()
-                if collector.canEmptyTrash {
-                    Button("Empty Trash…") { model.requestEmptyTrash() }
-                }
-                Button("OK") { collector.dismissMessage() }
-            } else {
-                Text("Collector").font(.system(size: 13, weight: .semibold))
-                Text("\(collector.items.count) items · \(ByteSize.format(collector.totalBytes))")
-                    .font(.monoCaption).foregroundStyle(Theme.textSecondary)
-                Spacer()
-                Button("Review") { isReviewing = true }
-                Button("Clear") { collector.clear() }
-                Button(deletePermanently ? "Delete" : "Move to Trash") { collector.requestTrash() }
-                    .disabled(collector.isTrashing)
+                Button("Cancel") { collector.cancelRemoval() }
+                    .keyboardShortcut(.cancelAction)
+            case .removing(let done, let total, let permanently):
+                ProgressStrip(
+                    title: permanently ? "Deleting" : "Moving to the Trash",
+                    detail: "\(ByteSize.format(done)) of \(ByteSize.format(total))",
+                    fraction: total > 0 ? Double(done) / Double(total) : nil
+                )
+            case .idle:
+                idle
             }
         }
         .card(padding: Theme.Spacing.md)
@@ -49,16 +46,30 @@ struct CollectorBar: View {
             return !urls.isEmpty
         } isTargeted: { isTargeted = $0 }
         .popover(isPresented: $isReviewing, arrowEdge: .top) { CollectorReview() }
-        .confirmationDialog(
-            deletePermanently
-                ? "Delete \(collector.items.count) items (\(ByteSize.format(collector.totalBytes))) permanently?"
-                : "Move \(collector.items.count) items (\(ByteSize.format(collector.totalBytes))) to the Trash?",
-            isPresented: Binding(get: { collector.isConfirming }, set: { if !$0 { collector.cancelTrash() } })
-        ) {
-            Button(deletePermanently ? "Delete" : "Move to Trash", role: .destructive) { model.trashCollected() }
-            Button("Cancel", role: .cancel) { collector.cancelTrash() }
-        } message: {
-            Text(deletePermanently ? "This can't be undone." : "You can put them back from the Trash until it's emptied.")
+    }
+
+    @ViewBuilder
+    private var idle: some View {
+        Image(systemName: collector.isEmpty ? "tray" : "tray.full").foregroundStyle(Theme.accent)
+        if collector.isEmpty, collector.message == nil {
+            Text("Drag files and folders here to collect them")
+                .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+            Spacer()
+        } else if let message = collector.message {
+            Text(message).font(.system(size: 13)).lineLimit(2)
+            Spacer()
+            if collector.canEmptyTrash {
+                Button("Empty Trash…") { model.requestEmptyTrash() }
+            }
+            Button("OK") { collector.dismissMessage() }
+        } else {
+            Text("Collector").font(.system(size: 13, weight: .semibold))
+            Text("\(collector.items.count) items · \(ByteSize.format(collector.totalBytes))")
+                .font(.monoCaption).foregroundStyle(Theme.textSecondary)
+            Spacer()
+            Button("Review") { isReviewing = true }
+            Button("Clear") { collector.clear() }
+            Button(deletePermanently ? "Delete" : "Move to Trash") { collector.requestRemoval() }
         }
     }
 }
