@@ -9,6 +9,7 @@ import SwiftUI
 struct OffloadSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(OffloadViewModel.self) private var offload
+    @Environment(VolumesViewModel.self) private var volumes
 
     var body: some View {
         if let request = offload.request {
@@ -71,7 +72,10 @@ struct OffloadSheet: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             HStack(spacing: Theme.Spacing.xl) {
                 fact("Size", ByteSize.format(report.bytes))
-                fact("External Drive", model.driveVolume.map { "\($0.name) · \(ByteSize.format($0.availableBytes)) free" } ?? "None chosen")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("External Drive").font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.textSecondary)
+                    drivePicker
+                }
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
@@ -91,6 +95,26 @@ struct OffloadSheet: View {
                     get: { request.acknowledgedWarnings }, set: { offload.acknowledgeWarnings($0) }
                 ))
             }
+        }
+    }
+
+    @ViewBuilder
+    private var drivePicker: some View {
+        if volumes.driveCandidates.isEmpty {
+            Text("Plug in an external drive").font(.system(size: 14, weight: .medium, design: .monospaced))
+        } else {
+            Menu {
+                ForEach(volumes.driveCandidates) { volume in
+                    Toggle(isOn: Binding(get: { volume.id == offload.driveVolumeID }, set: { _ in model.selectOffloadDrive(volume.id) })) {
+                        Text("\(volume.name) · \(ByteSize.format(volume.availableBytes)) free")
+                    }
+                }
+            } label: {
+                Text(model.driveVolume.map { "\($0.name) · \(ByteSize.format($0.availableBytes)) free" } ?? "Choose a drive")
+                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+            }
+            .menuStyle(.button)
+            .fixedSize()
         }
     }
 

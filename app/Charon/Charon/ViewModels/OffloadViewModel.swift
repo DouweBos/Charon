@@ -108,17 +108,31 @@ final class OffloadViewModel {
             alertMessage = "Wait for the current crossing to finish."
             return
         }
-        let userPath = OffloadPreflight.userFacingPath(path)
-        request = OffloadRequest(path: userPath, knownBytes: knownBytes)
+        request = OffloadRequest(path: OffloadPreflight.userFacingPath(path), knownBytes: knownBytes)
+        checkRequest(against: drive)
+    }
+
+    /// Switches drives from the offload sheet and re-checks the pending offload against the new one.
+    func selectDrive(_ volumeID: String?, for drive: VolumeInfo?) {
+        selectDrive(volumeID)
+        guard let stage = request?.stage, stage == .checking || stage == .review else { return }
+        request?.acknowledgedWarnings = false
+        checkRequest(against: drive)
+    }
+
+    private func checkRequest(against drive: VolumeInfo?) {
+        guard let request else { return }
+        let id = request.id
         let existing = records
         let preflight = preflight
+        self.request?.stage = .checking
         Task {
             let report = await preflight.check(
-                source: URL(fileURLWithPath: userPath), drive: drive, bytes: knownBytes, existing: existing
+                source: URL(fileURLWithPath: request.path), drive: drive, bytes: request.knownBytes, existing: existing
             )
-            guard request?.path == userPath else { return }
-            request?.report = report
-            request?.stage = .review
+            guard self.request?.id == id, self.request?.stage == .checking else { return }
+            self.request?.report = report
+            self.request?.stage = .review
         }
     }
 

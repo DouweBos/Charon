@@ -235,6 +235,10 @@ final class AppModel {
         offload.requestOffload(path: path, knownBytes: knownBytes, drive: driveVolume)
     }
 
+    func selectOffloadDrive(_ volumeID: String) {
+        offload.selectDrive(volumeID, for: volumes.volume(volumeID))
+    }
+
     func recheckFullDiskAccess() {
         hasFullDiskAccess = SystemIntegration.hasFullDiskAccess
     }
