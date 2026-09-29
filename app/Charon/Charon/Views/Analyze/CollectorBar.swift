@@ -1,7 +1,7 @@
 // Views/Analyze/CollectorBar.swift
 // Charon
 //
-// Strip under the treemap showing what's collected, with review and move-to-Trash.
+// Strip under the treemap showing what's collected, with review and removal.
 
 import CharonKit
 import SwiftUI
@@ -11,6 +11,7 @@ struct CollectorBar: View {
     @Environment(CollectorViewModel.self) private var collector
     @State private var isReviewing = false
     @State private var isTargeted = false
+    @AppStorage(AppSettings.deletePermanently) private var deletePermanently = false
 
     var body: some View {
         HStack(spacing: Theme.Spacing.md) {
@@ -33,7 +34,7 @@ struct CollectorBar: View {
                 Spacer()
                 Button("Review") { isReviewing = true }
                 Button("Clear") { collector.clear() }
-                Button("Move to Trash") { collector.requestTrash() }
+                Button(deletePermanently ? "Delete" : "Move to Trash") { collector.requestTrash() }
                     .disabled(collector.isTrashing)
             }
         }
@@ -49,13 +50,15 @@ struct CollectorBar: View {
         } isTargeted: { isTargeted = $0 }
         .popover(isPresented: $isReviewing, arrowEdge: .top) { CollectorReview() }
         .confirmationDialog(
-            "Move \(collector.items.count) items (\(ByteSize.format(collector.totalBytes))) to the Trash?",
+            deletePermanently
+                ? "Delete \(collector.items.count) items (\(ByteSize.format(collector.totalBytes))) permanently?"
+                : "Move \(collector.items.count) items (\(ByteSize.format(collector.totalBytes))) to the Trash?",
             isPresented: Binding(get: { collector.isConfirming }, set: { if !$0 { collector.cancelTrash() } })
         ) {
-            Button("Move to Trash", role: .destructive) { model.trashCollected() }
+            Button(deletePermanently ? "Delete" : "Move to Trash", role: .destructive) { model.trashCollected() }
             Button("Cancel", role: .cancel) { collector.cancelTrash() }
         } message: {
-            Text("You can put them back from the Trash until it's emptied.")
+            Text(deletePermanently ? "This can't be undone." : "You can put them back from the Trash until it's emptied.")
         }
     }
 }

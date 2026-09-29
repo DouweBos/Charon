@@ -13,6 +13,7 @@ struct SettingsView: View {
     @AppStorage(AppSettings.rememberScans) private var rememberScans = true
     @AppStorage(AppSettings.treemapDepth) private var treemapDepth = 3
     @AppStorage(AppSettings.driveFolder) private var driveFolder = "Charon"
+    @AppStorage(AppSettings.deletePermanently) private var deletePermanently = false
     @AppStorage(MonitorSettings.lowGigabytes) private var lowGigabytes = 20
     @AppStorage(MonitorSettings.lowPercent) private var lowPercent = 5
     @AppStorage(MonitorSettings.criticalGigabytes) private var criticalGigabytes = 5
@@ -55,6 +56,11 @@ struct SettingsView: View {
                     Text("3 levels").tag(3)
                     Text("4 levels").tag(4)
                 }
+            }
+            Section("Removing") {
+                Toggle("Delete immediately instead of moving to the Trash", isOn: $deletePermanently)
+                Text("Applies to the Collector, Clean and Uninstall. Deleted items can't be recovered.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Offload") {
                 TextField("Folder on the external drive", text: $driveFolder)

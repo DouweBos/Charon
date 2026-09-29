@@ -1,7 +1,7 @@
 // ViewModels/UninstallViewModel.swift
 // Charon
 //
-// Apps with their sizes and leftovers. Uninstalling moves the app and chosen leftovers to the Trash.
+// Apps with their sizes and leftovers. Uninstalling trashes (or deletes) the app and chosen leftovers.
 
 import AppKit
 import CharonKit
@@ -102,21 +102,26 @@ final class UninstallViewModel {
         isConfirming = false
         guard let app = selectedApp else { return }
         let urls = [app.url] + leftovers.filter { removing.contains($0.id) }.map(\.url)
+        let permanently = FileRemoval.deletesPermanently
         isUninstalling = true
         Task {
             defer { isUninstalling = false }
             var failed: [String] = []
             for url in urls {
                 do {
-                    try await NSWorkspace.shared.recycle([url])
+                    try await FileRemoval.remove([url], permanently: permanently)
                 } catch {
                     Logger.volumes.error("Uninstall skipped \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     failed.append(url.lastPathComponent)
                 }
             }
-            message = failed.isEmpty
-                ? "Moved \(app.name) and \(urls.count - 1) leftovers to the Trash."
-                : "Couldn't move \(failed.joined(separator: ", ")) to the Trash."
+            let names = failed.joined(separator: ", ")
+            switch (failed.isEmpty, permanently) {
+            case (true, true): message = "Deleted \(app.name) and \(urls.count - 1) leftovers."
+            case (true, false): message = "Moved \(app.name) and \(urls.count - 1) leftovers to the Trash."
+            case (false, true): message = "Couldn't delete \(names)."
+            case (false, false): message = "Couldn't move \(names) to the Trash."
+            }
             if !failed.contains(app.url.lastPathComponent) {
                 apps.removeAll { $0.id == app.id }
                 select(nil)

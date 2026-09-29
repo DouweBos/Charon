@@ -131,6 +131,7 @@ final class CleanViewModel {
         let simulators = rows.filter { $0.category.mode == .simulators }.flatMap(selectedItems(in:))
         let items = rows.filter { $0.category.mode != .simulators }.flatMap(selectedItems(in:))
         guard !items.isEmpty || !simulators.isEmpty else { return }
+        let permanently = FileRemoval.deletesPermanently
         isCleaning = true
         Task {
             defer { isCleaning = false }
@@ -138,7 +139,7 @@ final class CleanViewModel {
             var deleted: [String] = []
             for item in items {
                 do {
-                    try await NSWorkspace.shared.recycle([item.url] + item.companions)
+                    try await FileRemoval.remove([item.url] + item.companions, permanently: permanently)
                     trashed.append(item.url.path)
                 } catch {
                     Logger.volumes.error("Clean skipped \(item.url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
@@ -151,11 +152,11 @@ final class CleanViewModel {
                     Logger.volumes.error("simctl couldn't delete \(simulator.url.path, privacy: .public)")
                 }
             }
-            // Worktrees moved to the Trash still have entries in their repository; let git drop them.
+            // Removed worktrees still have entries in their repository; let git drop them.
             let repositories = Set(trashed.compactMap { worktreeRepositories[$0] })
             for repository in repositories { await GitWorktreeFinder().prune(repository) }
             message = Self.summary(
-                trashed: trashed.count, deleted: deleted.count,
+                removed: trashed.count, permanently: permanently, deleted: deleted.count,
                 skipped: items.count + simulators.count - trashed.count - deleted.count
             )
             onTrashed?(trashed + deleted)
@@ -163,14 +164,14 @@ final class CleanViewModel {
         }
     }
 
-    private static func summary(trashed: Int, deleted: Int, skipped: Int) -> String {
+    private static func summary(removed: Int, permanently: Bool, deleted: Int, skipped: Int) -> String {
         var parts: [String] = []
-        if trashed > 0 { parts.append("Moved \(trashed) items to the Trash") }
+        if removed > 0 { parts.append(permanently ? "Deleted \(removed) items" : "Moved \(removed) items to the Trash") }
         if deleted > 0 { parts.append("deleted \(deleted) simulators") }
         if skipped > 0 { parts.append("skipped \(skipped) in use or protected") }
         let sentence = parts.joined(separator: ", ")
         let text = sentence.prefix(1).uppercased() + sentence.dropFirst() + "."
-        return trashed > 0 ? text + " Empty the Trash to free the space." : text
+        return removed > 0 && !permanently ? text + " Empty the Trash to free the space." : text
     }
 
     func showMessage(_ text: String) {

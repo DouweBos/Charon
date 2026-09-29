@@ -1,7 +1,7 @@
 // ViewModels/CollectorViewModel.swift
 // Charon
 //
-// Items gathered for removal. Nothing is deleted: confirmed items go to the Trash.
+// Items gathered for removal. Confirmed items go to the Trash, or are deleted if Settings says so.
 
 import AppKit
 import CharonKit
@@ -77,6 +77,7 @@ final class CollectorViewModel {
         let refused = collected.items.filter { policy.refusal(for: $0.path) != nil }
         for item in refused { collected.remove(item.path) }
         let items = collected.items
+        let permanently = FileRemoval.deletesPermanently
         isTrashing = true
         Task {
             defer { isTrashing = false }
@@ -84,10 +85,10 @@ final class CollectorViewModel {
             var failures: [String] = []
             for item in items {
                 do {
-                    try await NSWorkspace.shared.recycle([URL(fileURLWithPath: item.path)])
+                    try await FileRemoval.remove([URL(fileURLWithPath: item.path)], permanently: permanently)
                     trashed.append(item.path)
                 } catch {
-                    Logger.volumes.error("Trash failed for \(item.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    Logger.volumes.error("Removal failed for \(item.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     failures.append((item.path as NSString).lastPathComponent)
                 }
             }
@@ -96,10 +97,15 @@ final class CollectorViewModel {
             for path in trashed { collected.remove(path) }
             let freed = items.filter { trashed.contains($0.path) }.reduce(Int64(0)) { $0 + $1.bytes }
             failures += refused.map { ($0.path as NSString).lastPathComponent }
-            canEmptyTrash = !trashed.isEmpty
-            message = failures.isEmpty
-                ? "Moved \(ByteSize.format(freed)) to the Trash. Empty the Trash to free the space."
-                : "Couldn't move \(failures.joined(separator: ", ")) to the Trash."
+            canEmptyTrash = !permanently && !trashed.isEmpty
+            if !failures.isEmpty {
+                let names = failures.joined(separator: ", ")
+                message = permanently ? "Couldn't delete \(names)." : "Couldn't move \(names) to the Trash."
+            } else {
+                message = permanently
+                    ? "Deleted \(ByteSize.format(freed))."
+                    : "Moved \(ByteSize.format(freed)) to the Trash. Empty the Trash to free the space."
+            }
         }
     }
 }

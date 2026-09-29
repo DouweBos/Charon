@@ -1,13 +1,14 @@
 // Views/Clean/CleanView.swift
 // Charon
 //
-// Known caches and leftovers with their sizes. Selected categories move to the Trash.
+// Known caches and leftovers with their sizes. Selected categories go to the Trash, or are deleted if Settings says so.
 
 import CharonKit
 import SwiftUI
 
 struct CleanView: View {
     @Environment(CleanViewModel.self) private var clean
+    @AppStorage(AppSettings.deletePermanently) private var deletePermanently = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
@@ -33,10 +34,12 @@ struct CleanView: View {
         .padding(.bottom, Theme.Spacing.xl)
         .onAppear { clean.measureIfNeeded() }
         .confirmationDialog(
-            "Move \(ByteSize.format(clean.selectedBytes)) of caches and leftovers to the Trash?",
+            deletePermanently
+                ? "Delete \(ByteSize.format(clean.selectedBytes)) of caches and leftovers permanently?"
+                : "Move \(ByteSize.format(clean.selectedBytes)) of caches and leftovers to the Trash?",
             isPresented: Binding(get: { clean.isConfirming }, set: { if !$0 { clean.cancelClean() } })
         ) {
-            Button("Move to Trash", role: .destructive) { clean.confirmClean() }
+            Button(deletePermanently ? "Delete" : "Move to Trash", role: .destructive) { clean.confirmClean() }
             Button("Cancel", role: .cancel) { clean.cancelClean() }
         } message: {
             Text(clean.deletesSimulators
@@ -58,7 +61,7 @@ struct CleanView: View {
             }
             Button("Rescan", systemImage: "arrow.clockwise") { clean.measure() }
                 .disabled(clean.isMeasuring)
-            Button("Move to Trash") { clean.requestClean() }
+            Button(deletePermanently ? "Delete" : "Move to Trash") { clean.requestClean() }
                 .buttonStyle(.borderedProminent)
                 .disabled(clean.selectedBytes == 0 || clean.isCleaning)
         }

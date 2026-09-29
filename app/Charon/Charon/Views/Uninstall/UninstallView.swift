@@ -63,6 +63,7 @@ private struct AppRow: View {
 
 private struct AppDetail: View {
     @Environment(UninstallViewModel.self) private var uninstall
+    @AppStorage(AppSettings.deletePermanently) private var deletePermanently = false
     let app: InstalledApp
 
     var body: some View {
@@ -106,16 +107,18 @@ private struct AppDetail: View {
             HStack {
                 Button("Show in Finder") { SystemIntegration.revealInFinder(app.url.path) }
                 Spacer()
-                Button("Move to Trash") { uninstall.requestUninstall() }
+                Button(deletePermanently ? "Delete" : "Move to Trash") { uninstall.requestUninstall() }
                     .buttonStyle(.borderedProminent)
                     .disabled(uninstall.isSelectedAppRunning || uninstall.isUninstalling)
             }
         }
         .confirmationDialog(
-            "Move \(app.name) and its selected leftovers (\(ByteSize.format(uninstall.removalBytes))) to the Trash?",
+            deletePermanently
+                ? "Delete \(app.name) and its selected leftovers (\(ByteSize.format(uninstall.removalBytes))) permanently?"
+                : "Move \(app.name) and its selected leftovers (\(ByteSize.format(uninstall.removalBytes))) to the Trash?",
             isPresented: Binding(get: { uninstall.isConfirming }, set: { if !$0 { uninstall.cancelUninstall() } })
         ) {
-            Button("Move to Trash", role: .destructive) { uninstall.confirmUninstall() }
+            Button(deletePermanently ? "Delete" : "Move to Trash", role: .destructive) { uninstall.confirmUninstall() }
             Button("Cancel", role: .cancel) { uninstall.cancelUninstall() }
         }
     }

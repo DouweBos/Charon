@@ -18,6 +18,7 @@ enum AppSettings {
     static let largestFilesAge = "files.ageFilterDays"
     static let accessPromptShown = "onboarding.accessPromptShown"
     static let monitorEnabledByDefault = "monitor.enabledByDefault"
+    static let deletePermanently = "removal.deletePermanently"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: MonitorSettings.defaults)
@@ -26,7 +27,8 @@ enum AppSettings {
             measurePrivateSize: false,
             rememberScans: true,
             treemapDepth: 3,
-            driveFolder: "Charon"
+            driveFolder: "Charon",
+            deletePermanently: false
         ])
     }
 
