@@ -4,7 +4,7 @@
 import os
 
 extension Logger {
-    nonisolated private static let subsystem = "com.houwert.Charon"
+    nonisolated private static let subsystem = "dev.houwert.charon"
 
     nonisolated static let scan = Logger(subsystem: subsystem, category: "Scan")
     nonisolated static let offload = Logger(subsystem: subsystem, category: "Offload")

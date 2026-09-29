@@ -133,7 +133,7 @@ public enum CleanCatalog {
             paths: ["~/Library/Caches"],
             excludes: [
                 "~/Library/Caches/Homebrew", "~/Library/Caches/org.swift.swiftpm", "~/Library/Caches/CocoaPods",
-                "~/Library/Caches/Yarn", "~/Library/Caches/pip", "~/Library/Caches/go-build", "~/Library/Caches/com.houwert.Charon"
+                "~/Library/Caches/Yarn", "~/Library/Caches/pip", "~/Library/Caches/go-build", "~/Library/Caches/dev.houwert.charon"
             ]
         ),
         CleanCategory(

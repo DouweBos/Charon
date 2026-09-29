@@ -1,11 +1,11 @@
 # Settings
 
-All settings are in UserDefaults (`com.houwert.Charon`) and, unless noted, in the Settings window (⌘,).
+All settings are in UserDefaults (`dev.houwert.charon`) and, unless noted, in the Settings window (⌘,).
 
 | Key | Default | Where | Effect |
 |---|---|---|---|
 | `scan.largeFileThresholdMB` | 50 | Scanning | Files at least this big get their own treemap tile; smaller ones roll into "Files". Applies to the next scan. |
-| `scan.rememberResults` | true | Scanning | Archive finished scans in `~/Library/Caches/com.houwert.Charon/Scans` and open on them next launch; Rescan refreshes. |
+| `scan.rememberResults` | true | Scanning | Archive finished scans in `~/Library/Caches/dev.houwert.charon/Scans` and open on them next launch; Rescan refreshes. |
 | `scan.measurePrivateSize` | false | Scanning | Also measure bytes not shared with APFS clones. Roughly doubles scan time; local Time Machine snapshots make it read low. |
 | `files.ageFilterDays` | 0 | Largest Files | Only list files not opened for this many days (0 = any). Uses Spotlight's last-opened date, falling back to last modified. |
 | `treemap.depth` | 3 | Treemap | Nesting levels drawn at once (1–4). Levels where one folder holds 85% or more (like Users → your home) don't count, so the map looks past them. |
@@ -20,5 +20,5 @@ All settings are in UserDefaults (`com.houwert.Charon`) and, unless noted, in th
 | `monitor.showFreeSpace` | true | Menu Bar Monitor | Show free space next to the menu bar icon. |
 | `monitor.notifyDisconnected` | true | Menu Bar Monitor | Notify when a drive holding offloaded folders disconnects or comes back. |
 
-The monitor itself is turned on with "Show the monitor in the menu bar at login", which registers `CharonMonitor.app` (embedded in `Charon.app/Contents/Library/LoginItems`) through `SMAppService`. It reads these keys from the `com.houwert.Charon` defaults domain.
+The monitor itself is turned on with "Show the monitor in the menu bar at login", which registers `CharonMonitor.app` (embedded in `Charon.app/Contents/Library/LoginItems`) through `SMAppService`. It reads these keys from the `dev.houwert.charon` defaults domain.
 

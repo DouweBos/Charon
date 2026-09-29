@@ -28,7 +28,7 @@ enum AdminScanRunner {
     /// Fresh output directory in Charon's caches, readable only by the current user.
     static func makeOutputDirectory() throws -> URL {
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        let url = caches.appendingPathComponent("com.houwert.Charon/AdminScans/\(UUID().uuidString)")
+        let url = caches.appendingPathComponent("dev.houwert.charon/AdminScans/\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         return url
     }

@@ -6,9 +6,9 @@
 import Foundation
 
 public enum MonitorSettings {
-    public static let suiteName = "com.houwert.Charon"
-    public static let monitorBundleID = "com.houwert.Charon.Monitor"
-    public static let appBundleID = "com.houwert.Charon"
+    public static let suiteName = "dev.houwert.charon"
+    public static let monitorBundleID = "dev.houwert.charon.monitor"
+    public static let appBundleID = "dev.houwert.charon"
 
     public static let lowGigabytes = "monitor.lowGigabytes"
     public static let lowPercent = "monitor.lowPercent"

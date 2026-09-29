@@ -100,7 +100,7 @@ public struct ScanArchiveStore: Sendable {
 
     public static var defaultDirectory: URL {
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        return caches.appendingPathComponent("com.houwert.Charon/Scans")
+        return caches.appendingPathComponent("dev.houwert.charon/Scans")
     }
 
     public func url(forVolumeID id: String) -> URL {

@@ -45,7 +45,7 @@ public struct AppInventory: Sendable {
         var apps: [InstalledApp] = []
         for url in appBundles() {
             guard let bundle = Bundle(url: url), let bundleID = bundle.bundleIdentifier?.trimmingCharacters(in: .whitespaces),
-                  Self.isUsableBundleID(bundleID), !bundleID.hasPrefix("com.apple."), bundleID != "com.houwert.Charon" else { continue }
+                  Self.isUsableBundleID(bundleID), !bundleID.hasPrefix("com.apple."), bundleID != "dev.houwert.charon" else { continue }
             let name = (bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
                 ?? (bundle.object(forInfoDictionaryKey: "CFBundleName") as? String)
                 ?? url.deletingPathExtension().lastPathComponent
