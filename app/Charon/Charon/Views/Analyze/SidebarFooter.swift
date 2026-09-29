@@ -22,12 +22,29 @@ struct SidebarFooter: View {
                 Spacer()
                 Text(ByteSize.format(volume.availableBytes)).font(.monoCaption)
             }
-            if volume.id == volumes.bootVolume?.id, let trash = model.trashBytes {
-                TrashLine(bytes: trash) { model.requestEmptyTrash() }
+            if volume.id == volumes.bootVolume?.id {
+                if let trash = model.trashBytes {
+                    TrashLine(bytes: trash) { model.requestEmptyTrash() }
+                } else {
+                    noTrashAccess
+                }
             }
         }
         .font(.system(size: 12))
         .padding(.horizontal, Theme.Spacing.md)
+    }
+
+    /// macOS only lets apps with Full Disk Access read the Trash.
+    private var noTrashAccess: some View {
+        HStack {
+            Label("Trash", systemImage: "trash").foregroundStyle(Theme.textSecondary)
+            Spacer()
+            Button("No access") { SystemIntegration.openFullDiskAccessSettings() }
+                .buttonStyle(.borderless)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Theme.accent)
+                .help("Give Charon Full Disk Access to see how much the Trash holds")
+        }
     }
 }
 
