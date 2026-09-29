@@ -35,6 +35,8 @@ struct CollectorBar: View {
                 idle
             }
         }
+        // Fits the tallest phase (a two-line message), so switching phases doesn't shift the screen.
+        .frame(height: 32)
         .card(padding: Theme.Spacing.md)
         .overlay {
             if isTargeted {
