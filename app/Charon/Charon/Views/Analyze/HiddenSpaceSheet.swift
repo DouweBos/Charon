@@ -42,8 +42,7 @@ struct HiddenSpaceSheet: View {
         .frame(width: 540, height: 440)
         .background(Theme.background)
         .onAppear {
-            let scanned = model.currentScan?.tree?.size(DiskTree.root) ?? 0
-            model.hiddenSpace.load(scannedBytes: scanned, purgeableBytes: model.currentVolume?.purgeableBytes ?? 0)
+            model.hiddenSpace.load(scannedBytes: model.scannedBytes, purgeableBytes: model.currentVolume?.purgeableBytes ?? 0)
         }
     }
 

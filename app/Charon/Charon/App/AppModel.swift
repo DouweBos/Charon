@@ -72,7 +72,12 @@ final class AppModel {
     }
 
     var currentScan: ScanState? {
-        analyze.state(for: currentTarget?.id)
+        analyze.state(for: currentTarget?.id, hiding: Set(collector.items.map(\.path)))
+    }
+
+    /// Everything the current scan found, including collected items the map already leaves out.
+    var scannedBytes: Int64 {
+        analyze.state(for: currentTarget?.id)?.tree?.size(DiskTree.root) ?? 0
     }
 
     /// The drilled-into node, falling back to the root while a scan hasn't reached it yet.
@@ -83,9 +88,9 @@ final class AppModel {
 
     /// Used space the finished scan couldn't see; shown as "System & other" at the volume root.
     var unaccountedBytes: Int64 {
-        guard let scan = currentScan, scan.phase == .complete, let tree = scan.tree,
+        guard let scan = currentScan, scan.phase == .complete,
               focusNode == DiskTree.root, currentTarget?.isFolder == false, let volume = currentVolume else { return 0 }
-        return max(volume.usedBytes - tree.size(DiskTree.root), 0)
+        return max(volume.usedBytes - scannedBytes, 0)
     }
 
     var currentComparison: ScanComparison? {
@@ -245,6 +250,9 @@ final class AppModel {
     }
 
     func collect(path: String, bytes: Int64, isDirectory: Bool) {
+        // The map's sizes leave out what's already collected, but adding a folder absorbs those items.
+        let scan = analyze.state(for: currentTarget?.id)?.tree
+        let bytes = scan.flatMap { tree in tree.node(atDisplayPath: path).map(tree.size) } ?? bytes
         collector.add(path: path, bytes: bytes, isDirectory: isDirectory, offloadedPaths: Set(offload.records.map(\.originalPath)))
     }
 

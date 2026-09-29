@@ -86,13 +86,14 @@ final class CollectorViewModel {
                 do {
                     try await NSWorkspace.shared.recycle([URL(fileURLWithPath: item.path)])
                     trashed.append(item.path)
-                    collected.remove(item.path)
                 } catch {
                     Logger.volumes.error("Trash failed for \(item.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     failures.append((item.path as NSString).lastPathComponent)
                 }
             }
+            // Detach from the scan before un-collecting, so trashed items never flash back onto the map.
             onTrashed?(trashed)
+            for path in trashed { collected.remove(path) }
             let freed = items.filter { trashed.contains($0.path) }.reduce(Int64(0)) { $0 + $1.bytes }
             failures += refused.map { ($0.path as NSString).lastPathComponent }
             canEmptyTrash = !trashed.isEmpty

@@ -12,7 +12,11 @@ import os
 struct ScanState {
     enum Phase: Equatable { case scanning, complete, cancelled, failed(String) }
 
-    var tree: DiskTree?
+    var tree: DiskTree? {
+        didSet { treeID = UUID() }
+    }
+    /// Changes whenever `tree` does, so derived trees can be cached.
+    private(set) var treeID = UUID()
     var progress = ScanProgress()
     var phase: Phase = .scanning
     /// When the shown tree was completed; set for finished and cached scans.
@@ -39,6 +43,12 @@ struct ScanState {
     }
 }
 
+private struct PresentedTree {
+    var treeID: UUID
+    var hidden: Set<String>
+    var tree: DiskTree
+}
+
 @MainActor
 @Observable
 final class AnalyzeViewModel {
@@ -48,6 +58,7 @@ final class AnalyzeViewModel {
     /// The finished tree a running rescan will be compared against.
     @ObservationIgnored private var adminRequests: [String: AdminScanRequest] = [:]
     @ObservationIgnored private var baselines: [String: (tree: DiskTree, date: Date)] = [:]
+    @ObservationIgnored private var presented: [String: PresentedTree] = [:]
     /// Recently scanned folders, newest first.
     private(set) var folderPaths: [String] = UserDefaults.standard.stringArray(forKey: AppSettings.recentFolders) ?? []
 
@@ -63,6 +74,23 @@ final class AnalyzeViewModel {
 
     func state(for targetID: String?) -> ScanState? {
         targetID.flatMap { scans[$0] }
+    }
+
+    /// The scan with `hidden` paths left out, so collected items stop crowding the map before they're trashed.
+    func state(for targetID: String?, hiding hidden: Set<String>) -> ScanState? {
+        guard let targetID, var state = scans[targetID] else { return nil }
+        guard !hidden.isEmpty, let tree = state.tree else {
+            presented[targetID] = nil
+            return state
+        }
+        if let cached = presented[targetID], cached.treeID == state.treeID, cached.hidden == hidden {
+            state.tree = cached.tree
+        } else {
+            let shown = tree.hiding(displayPaths: hidden)
+            presented[targetID] = PresentedTree(treeID: state.treeID, hidden: hidden, tree: shown)
+            state.tree = shown
+        }
+        return state
     }
 
     /// Shows the archived scan if there is one, otherwise starts scanning.

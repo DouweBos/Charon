@@ -182,6 +182,15 @@ extension DiskTree {
         parents[Int(id)] = Self.orphaned
     }
 
+    /// A copy without the nodes at `displayPaths`, as if they were already gone.
+    public func hiding(displayPaths: some Sequence<String>) -> DiskTree {
+        var copy = self
+        for path in displayPaths {
+            if let node = copy.node(atDisplayPath: path) { copy.detach(node) }
+        }
+        return copy
+    }
+
     /// Replaces the contents of `id` with a fresh scan of the same folder, fixing up ancestor totals.
     /// `subtree` must list parents before children, which every scan does.
     public mutating func graft(_ subtree: DiskTree, at id: NodeID) {

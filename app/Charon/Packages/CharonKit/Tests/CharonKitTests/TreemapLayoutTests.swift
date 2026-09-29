@@ -69,6 +69,15 @@ struct TreemapLayoutTests {
         #expect(tree.size(DiskTree.root) == 800)
     }
 
+    @Test func hidingLeavesTheOriginalIntact() {
+        let tree = sampleTree()
+        let hidden = tree.hiding(displayPaths: ["/Library/Caches", "/missing"])
+        #expect(hidden.node(atDisplayPath: "/Library/Caches") == nil)
+        #expect(hidden.size(DiskTree.root) == 800)
+        #expect(tree.node(atDisplayPath: "/Library/Caches") != nil)
+        #expect(tree.size(DiskTree.root) == 1000)
+    }
+
     @Test func largestFilesWalksTheSubtree() {
         var tree = sampleTree()
         let caches = tree.node(atDisplayPath: "/Library/Caches")!
