@@ -30,6 +30,7 @@ struct HiddenSpaceSheet: View {
                     Label("\(hidden.snapshots.count) local Time Machine snapshots. macOS deletes them after 24 hours or when space runs low.",
                           systemImage: "clock.arrow.circlepath")
                         .font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             Spacer(minLength: 0)
@@ -39,7 +40,9 @@ struct HiddenSpaceSheet: View {
             }
         }
         .padding(Theme.Spacing.xl)
-        .frame(width: 540, height: 440)
+        .frame(width: 540)
+        .frame(minHeight: 440)
+        .fixedSize(horizontal: false, vertical: true)
         .background(Theme.background)
         .onAppear {
             model.hiddenSpace.load(scannedBytes: model.scannedBytes, purgeableBytes: model.currentVolume?.purgeableBytes ?? 0)
