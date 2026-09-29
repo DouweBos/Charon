@@ -9,14 +9,20 @@ import Foundation
 public struct CleanItem: Sendable, Hashable, Identifiable {
     public var url: URL
     public var bytes: Int64
+    /// Shown instead of the file name, e.g. a simulator's device name.
+    public var title: String?
     /// Extra context shown under the name, e.g. "feature/login · Merged into main".
     public var detail: String?
+    /// Files removed together with `url`.
+    public var companions: [URL] = []
     public var id: String { url.path }
 
-    public init(url: URL, bytes: Int64, detail: String? = nil) {
+    public init(url: URL, bytes: Int64, title: String? = nil, detail: String? = nil, companions: [URL] = []) {
         self.url = url
         self.bytes = bytes
+        self.title = title
         self.detail = detail
+        self.companions = companions
     }
 }
 
@@ -33,6 +39,18 @@ public struct CleanMeasurer: Sendable {
         switch category.mode {
         case .gitWorktrees:
             break
+        case .simulators, .androidEmulators:
+            for root in category.paths.flatMap(resolver.matches) {
+                let devices = category.mode == .simulators ? SimulatorDevices.list(root: root) : AndroidEmulators.list(home: root)
+                for device in devices {
+                    try Task.checkCancellation()
+                    let lastUsed = device.lastUsed.map { "Last used " + $0.formatted(date: .abbreviated, time: .omitted) }
+                    items.append(CleanItem(
+                        url: device.folder, bytes: try await Self.size(of: device.folder), title: device.name,
+                        detail: [device.platform, lastUsed].compactMap { $0 }.joined(separator: " · "), companions: device.companions
+                    ))
+                }
+            }
         case .itself, .emptyTrash:
             for url in category.paths.flatMap(resolver.matches) {
                 items.append(CleanItem(url: url, bytes: try await Self.size(of: url)))

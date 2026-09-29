@@ -17,6 +17,8 @@ Categories marked **Rebuilt automatically** are selected by default; **Review fi
 | Logs | `~/Library/Logs/*` | Rebuilt |
 | Mail attachments | `~/Library/Containers/com.apple.mail/Data/Library/Mail Downloads/*` | Rebuilt |
 | macOS installers | `/Applications/Install macOS*.app` | Rebuilt |
+| Xcode simulators | `~/Library/Developer/CoreSimulator/Devices/*` | Review, pick per device |
+| Android emulators | `~/.android/avd/*.avd` and their `.ini` | Review, pick per device |
 | Merged git worktrees | linked worktrees of repositories found in the last startup disk scan | Review |
 | Trash | `~/.Trash` | Emptied via Finder |
 | iPhone and iPad backups | `~/Library/Application Support/MobileSync/Backup/*` | Review |
@@ -33,3 +35,10 @@ For every repository in the last startup disk scan (a folder with a `.git` direc
 - and either the worktree's commit is an ancestor of the default branch (`origin/HEAD`, else `main`/`master`), or merging it into the default branch would change nothing (`git merge-tree`), which catches squash and rebase merges.
 
 Git runs with `GIT_OPTIONAL_LOCKS=0` so checking never rewrites an index. Cleaning moves the worktree folders to the Trash, then runs `git worktree prune` in their repositories. Branches are left alone.
+
+## Simulators and emulators
+
+These two categories list devices instead of taking everything: expand the row and tick the ones to remove, or use the row's checkbox to take all of them. Each device shows its name, OS, last use, and size. Devices that are booted or running are left out.
+
+- **Xcode simulators** are read from each device's `device.plist` and deleted with `xcrun simctl delete`, so CoreSimulator's device set stays consistent. They don't go to the Trash.
+- **Android emulators** are read from the `.ini` files in `~/.android/avd` (following their `path=`). The `.avd` folder and its `.ini` go to the Trash. An AVD with `hardware-qemu.ini.lock` is running and skipped.

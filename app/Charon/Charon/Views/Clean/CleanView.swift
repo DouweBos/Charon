@@ -39,7 +39,9 @@ struct CleanView: View {
             Button("Move to Trash", role: .destructive) { clean.confirmClean() }
             Button("Cancel", role: .cancel) { clean.cancelClean() }
         } message: {
-            Text("Apps rebuild these as needed. Quit apps whose caches you're clearing for the best result.")
+            Text(clean.deletesSimulators
+                ? "Selected simulators are deleted with simctl and can't be restored from the Trash. Apps rebuild caches as needed."
+                : "Apps rebuild these as needed. Quit apps whose caches you're clearing for the best result.")
         }
     }
 
@@ -75,6 +77,12 @@ struct CleanRowView: View {
             HStack(spacing: Theme.Spacing.md) {
                 if row.category.mode == .emptyTrash {
                     Image(systemName: row.category.symbol).frame(width: 18)
+                } else if row.category.picksItems {
+                    Toggle(sources: itemBindings, isOn: \.self) { EmptyView() }
+                        .toggleStyle(.checkbox)
+                        .labelsHidden()
+                        .disabled(!row.hasItems)
+                        .accessibilityLabel(row.category.title)
                 } else {
                     Toggle("", isOn: Binding(get: { clean.isSelected(row.id) }, set: { _ in clean.toggle(row.id) }))
                         .toggleStyle(.checkbox)
@@ -109,34 +117,27 @@ struct CleanRowView: View {
                 }
             }
             if isExpanded, let items = row.items {
+                let limit = row.category.picksItems ? items.count : 25
                 VStack(spacing: 2) {
-                    ForEach(items.prefix(25)) { item in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(item.url.lastPathComponent).font(.monoCaption).lineLimit(1).truncationMode(.middle)
-                                if let detail = item.detail {
-                                    Text(detail).font(.system(size: 11)).foregroundStyle(Theme.textSecondary).lineLimit(1)
-                                }
-                            }
-                            Spacer()
-                            Text(ByteSize.format(item.bytes)).font(.monoCaption).foregroundStyle(Theme.textSecondary)
-                            Button { SystemIntegration.revealInFinder(item.url.path) } label: { Image(systemName: "magnifyingglass") }
-                                .buttonStyle(.borderless)
-                                .accessibilityLabel("Reveal in Finder")
-                        }
-                        .contentShape(Rectangle())
-                        .contextMenu { LocationActions(locations: [item.url]) }
+                    ForEach(items.prefix(limit)) { item in
+                        CleanItemRow(item: item, isPickable: row.category.picksItems)
                     }
-                    if items.count > 25 {
-                        Text("and \(items.count - 25) more").font(.monoCaption).foregroundStyle(Theme.textSecondary)
+                    if items.count > limit {
+                        Text("and \(items.count - limit) more").font(.monoCaption).foregroundStyle(Theme.textSecondary)
                     }
                 }
-                .padding(.leading, 56)
+                .padding(.leading, row.category.picksItems ? 28 : 56)
             }
         }
         .card(padding: Theme.Spacing.md)
         .contextMenu {
             if !row.locations.isEmpty { LocationActions(locations: row.locations) }
+        }
+    }
+
+    private var itemBindings: [Binding<Bool>] {
+        (row.items ?? []).map { item in
+            Binding(get: { clean.isItemSelected(item) }, set: { clean.setItem(item, selected: $0) })
         }
     }
 
@@ -157,5 +158,39 @@ struct CleanRowView: View {
         case .regenerated: StatusBadge(title: "Rebuilt automatically", symbol: "arrow.triangle.2.circlepath", tone: .positive)
         case .review: StatusBadge(title: "Review first", symbol: "eye", tone: .caution)
         }
+    }
+}
+
+private struct CleanItemRow: View {
+    @Environment(CleanViewModel.self) private var clean
+    let item: CleanItem
+    let isPickable: Bool
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            if isPickable {
+                Toggle("", isOn: Binding(get: { clean.isItemSelected(item) }, set: { clean.setItem(item, selected: $0) }))
+                    .toggleStyle(.checkbox)
+                    .labelsHidden()
+                    .accessibilityLabel(item.title ?? item.url.lastPathComponent)
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                if let title = item.title {
+                    Text(title).font(.system(size: 13)).lineLimit(1)
+                } else {
+                    Text(item.url.lastPathComponent).font(.monoCaption).lineLimit(1).truncationMode(.middle)
+                }
+                if let detail = item.detail {
+                    Text(detail).font(.system(size: 11)).foregroundStyle(Theme.textSecondary).lineLimit(1)
+                }
+            }
+            Spacer()
+            Text(ByteSize.format(item.bytes)).font(.monoCaption).foregroundStyle(Theme.textSecondary)
+            Button { SystemIntegration.revealInFinder(item.url.path) } label: { Image(systemName: "magnifyingglass") }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Reveal in Finder")
+        }
+        .contentShape(Rectangle())
+        .contextMenu { LocationActions(locations: [item.url]) }
     }
 }

@@ -30,6 +30,10 @@ public struct CleanCategory: Sendable, Hashable, Identifiable {
         case emptyTrash
         /// Linked git worktrees already merged into their default branch; found from the repositories in a scan.
         case gitWorktrees
+        /// Xcode simulators, deleted through `simctl`.
+        case simulators
+        /// Android Virtual Devices: the `.avd` folder and its `.ini` go to the Trash.
+        case androidEmulators
     }
 
     public var id: String
@@ -42,6 +46,9 @@ public struct CleanCategory: Sendable, Hashable, Identifiable {
     public var paths: [String]
     /// Children of `contents` paths that belong to another category.
     public var excludes: [String] = []
+
+    /// Whether the user picks individual items instead of taking the whole category.
+    public var picksItems: Bool { mode == .simulators || mode == .androidEmulators }
 }
 
 public enum CleanCatalog {
@@ -72,6 +79,18 @@ public enum CleanCatalog {
             detail: "Dyld and runtime caches for simulators.",
             symbol: "ipad.and.iphone", group: .developer, safety: .regenerated, mode: .contents,
             paths: ["~/Library/Developer/CoreSimulator/Caches"]
+        ),
+        CleanCategory(
+            id: "xcode.simulators", title: "Xcode simulators",
+            detail: "Simulated devices with their installed apps and data. Pick the ones you no longer use.",
+            symbol: "apps.iphone", group: .developer, safety: .review, mode: .simulators,
+            paths: ["~/Library/Developer/CoreSimulator/Devices"]
+        ),
+        CleanCategory(
+            id: "android.emulators", title: "Android emulators",
+            detail: "Android Virtual Devices with their data and snapshots. Pick the ones you no longer use.",
+            symbol: "smartphone", group: .developer, safety: .review, mode: .androidEmulators,
+            paths: ["~/.android/avd"]
         ),
         CleanCategory(
             id: "git.mergedWorktrees", title: "Merged git worktrees",
@@ -190,7 +209,7 @@ public struct CleanResolver: Sendable {
     public func items(for category: CleanCategory) -> [URL] {
         let roots = category.paths.flatMap(matches)
         switch category.mode {
-        case .itself, .emptyTrash, .gitWorktrees:
+        case .itself, .emptyTrash, .gitWorktrees, .simulators, .androidEmulators:
             return roots
         case .contents:
             return roots.flatMap { contents(of: $0, excludes: category.excludes) }

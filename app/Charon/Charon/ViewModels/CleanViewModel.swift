@@ -18,6 +18,7 @@ final class CleanViewModel {
 
         var id: String { category.id }
         var bytes: Int64 { items?.reduce(0) { $0 + $1.bytes } ?? 0 }
+        var hasItems: Bool { !(items ?? []).isEmpty }
         var isMeasured: Bool { items != nil || error != nil }
         /// Where the category lives on disk: the folder whose contents it clears, or the items themselves.
         var locations: [URL] {
@@ -30,6 +31,8 @@ final class CleanViewModel {
 
     private(set) var rows: [Row] = CleanCatalog.all.map { Row(category: $0) }
     private(set) var selection: Set<String> = Set(CleanCatalog.all.filter { $0.safety == .regenerated }.map(\.id))
+    /// Chosen items in categories where the user picks items, keyed by item id.
+    private(set) var selectedItems: Set<String> = []
     private(set) var isMeasuring = false
     private(set) var isCleaning = false
     private(set) var isConfirming = false
@@ -44,7 +47,12 @@ final class CleanViewModel {
     @ObservationIgnored private let measurer = CleanMeasurer()
 
     var selectedBytes: Int64 {
-        rows.filter { selection.contains($0.id) && $0.category.mode != .emptyTrash }.reduce(0) { $0 + $1.bytes }
+        rows.reduce(0) { $0 + selectedItems(in: $1).reduce(0) { $0 + $1.bytes } }
+    }
+
+    /// Whether the selection includes simulators, which `simctl` deletes outright rather than trashing.
+    var deletesSimulators: Bool {
+        rows.contains { $0.category.mode == .simulators && !selectedItems(in: $0).isEmpty }
     }
 
     var hasMeasured: Bool { rows.contains(where: \.isMeasured) }
@@ -59,6 +67,21 @@ final class CleanViewModel {
 
     func toggle(_ id: String) {
         if selection.contains(id) { selection.remove(id) } else { selection.insert(id) }
+    }
+
+    func isItemSelected(_ item: CleanItem) -> Bool {
+        selectedItems.contains(item.id)
+    }
+
+    func setItem(_ item: CleanItem, selected: Bool) {
+        if selected { selectedItems.insert(item.id) } else { selectedItems.remove(item.id) }
+    }
+
+    /// What cleaning would take from the row: its picked items, or everything when the whole category is selected.
+    func selectedItems(in row: Row) -> [CleanItem] {
+        guard row.category.mode != .emptyTrash, let items = row.items else { return [] }
+        if row.category.picksItems { return items.filter { selectedItems.contains($0.id) } }
+        return selection.contains(row.id) ? items : []
     }
 
     func measureIfNeeded() {
@@ -105,30 +128,49 @@ final class CleanViewModel {
 
     func confirmClean() {
         isConfirming = false
-        let targets = rows.filter { selection.contains($0.id) && $0.category.mode != .emptyTrash }
-        let urls = targets.flatMap { $0.items ?? [] }.map(\.url)
-        guard !urls.isEmpty else { return }
+        let simulators = rows.filter { $0.category.mode == .simulators }.flatMap(selectedItems(in:))
+        let items = rows.filter { $0.category.mode != .simulators }.flatMap(selectedItems(in:))
+        guard !items.isEmpty || !simulators.isEmpty else { return }
         isCleaning = true
         Task {
             defer { isCleaning = false }
             var trashed: [String] = []
-            for url in urls {
+            var deleted: [String] = []
+            for item in items {
                 do {
-                    try await NSWorkspace.shared.recycle([url])
-                    trashed.append(url.path)
+                    try await NSWorkspace.shared.recycle([item.url] + item.companions)
+                    trashed.append(item.url.path)
                 } catch {
-                    Logger.volumes.error("Clean skipped \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    Logger.volumes.error("Clean skipped \(item.url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                }
+            }
+            for simulator in simulators {
+                if await SimulatorDevices.delete(simulator.url.lastPathComponent) {
+                    deleted.append(simulator.url.path)
+                } else {
+                    Logger.volumes.error("simctl couldn't delete \(simulator.url.path, privacy: .public)")
                 }
             }
             // Worktrees moved to the Trash still have entries in their repository; let git drop them.
             let repositories = Set(trashed.compactMap { worktreeRepositories[$0] })
             for repository in repositories { await GitWorktreeFinder().prune(repository) }
-            let skipped = urls.count - trashed.count
-            message = "Moved \(trashed.count) items to the Trash" + (skipped > 0 ? ", skipped \(skipped) in use or protected." : ".")
-                + " Empty the Trash to free the space."
-            onTrashed?(trashed)
+            message = Self.summary(
+                trashed: trashed.count, deleted: deleted.count,
+                skipped: items.count + simulators.count - trashed.count - deleted.count
+            )
+            onTrashed?(trashed + deleted)
             measure()
         }
+    }
+
+    private static func summary(trashed: Int, deleted: Int, skipped: Int) -> String {
+        var parts: [String] = []
+        if trashed > 0 { parts.append("Moved \(trashed) items to the Trash") }
+        if deleted > 0 { parts.append("deleted \(deleted) simulators") }
+        if skipped > 0 { parts.append("skipped \(skipped) in use or protected") }
+        let sentence = parts.joined(separator: ", ")
+        let text = sentence.prefix(1).uppercased() + sentence.dropFirst() + "."
+        return trashed > 0 ? text + " Empty the Trash to free the space." : text
     }
 
     func showMessage(_ text: String) {
