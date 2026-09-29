@@ -31,17 +31,10 @@ struct MonitorMenu: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let boot = monitor.boot {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text(boot.name).font(.headline)
-                        Spacer()
-                        Text("\(ByteSize.format(boot.availableBytes)) free").font(.system(.body, design: .monospaced))
-                    }
-                    ProgressView(value: monitor.usedFraction)
-                        .tint(monitor.level == .normal ? .accentColor : (monitor.level == .low ? MonitorTheme.warning : MonitorTheme.danger))
-                    Text("\(ByteSize.format(boot.usedBytes)) of \(ByteSize.format(boot.totalBytes)) used")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+                VolumeRow(volume: boot, tint: bootTint)
+            }
+            ForEach(monitor.externals) { volume in
+                VolumeRow(volume: volume, tint: .accentColor)
             }
             if monitor.offloadCount > 0 {
                 Divider()
@@ -72,6 +65,36 @@ struct MonitorMenu: View {
         }
         .padding(14)
         .frame(width: 300)
+    }
+
+    private var bootTint: Color {
+        switch monitor.level {
+        case .normal: .accentColor
+        case .low: MonitorTheme.warning
+        case .critical: MonitorTheme.danger
+        }
+    }
+}
+
+private struct VolumeRow: View {
+    let volume: VolumeInfo
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(volume.name).font(.headline).lineLimit(1)
+                Spacer()
+                Text("\(ByteSize.format(volume.availableBytes)) free").font(.system(.body, design: .monospaced))
+            }
+            ProgressView(value: usedFraction).tint(tint)
+            Text("\(ByteSize.format(volume.usedBytes)) of \(ByteSize.format(volume.totalBytes)) used")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private var usedFraction: Double {
+        volume.totalBytes > 0 ? Double(volume.usedBytes) / Double(volume.totalBytes) : 0
     }
 }
 

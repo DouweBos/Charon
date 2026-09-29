@@ -10,6 +10,8 @@ import UserNotifications
 @Observable
 final class MonitorModel: NSObject {
     private(set) var boot: VolumeInfo?
+    /// Connected external drives, shown below the boot disk in the menu; the menu bar label stays on the boot disk.
+    private(set) var externals: [VolumeInfo] = []
     private(set) var level: LowSpacePolicy.Level = .normal
     private(set) var offloadCount = 0
     private(set) var disconnectedDrives: [String] = []
@@ -42,13 +44,9 @@ final class MonitorModel: NSObject {
 
     var showsFreeSpace: Bool { store.bool(forKey: MonitorSettings.showFreeSpace) }
 
-    var usedFraction: Double {
-        guard let boot, boot.totalBytes > 0 else { return 0 }
-        return Double(boot.usedBytes) / Double(boot.totalBytes)
-    }
-
     func refresh(notify: Bool) {
         boot = catalog.bootVolume()
+        externals = catalog.mountedVolumes().filter { !$0.isBoot }
         if let boot {
             let next = MonitorSettings.policy(from: store).level(free: boot.availableBytes, total: boot.totalBytes, previous: level)
             if notify, next > level { notifyLowSpace(next, boot: boot) }

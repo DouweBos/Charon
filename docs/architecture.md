@@ -43,7 +43,7 @@ Colors live in `Assets.xcassets` with light and dark variants and are only refer
 
 ## Menu bar monitor (`app/Charon/CharonMonitor`)
 
-A separate `LSUIElement` app embedded as a login item so it stays small (the main app can hold a multi-million-node scan). It polls free space every minute and on mount/unmount, uses `LowSpacePolicy` (with hysteresis) to decide when to notify, and reads the offload manifest to report disconnected drives. Settings are shared through the `dev.houwert.charon` defaults domain (`MonitorSettings`).
+A separate `LSUIElement` app embedded as a login item so it stays small (the main app can hold a multi-million-node scan). It polls free space every minute and on mount/unmount (the menu bar label shows the boot disk; the menu also lists connected external drives), uses `LowSpacePolicy` (with hysteresis) to decide when to notify, and reads the offload manifest to report disconnected drives. Settings are shared through the `dev.houwert.charon` defaults domain (`MonitorSettings`).
 
 ## Permissions
 
