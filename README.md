@@ -71,15 +71,21 @@ A small login item that shows free space in the menu bar, warns before your disk
 - macOS 26.2 or later
 - Full Disk Access for complete scans (System Settings → Privacy & Security). Charon walks you through it on first launch.
 
-## Building
+Charon uses only public macOS APIs. Scan as Administrator asks for your password through the standard macOS prompt for each scan and installs nothing privileged.
 
-Needs Xcode 27 or later. Open `app/Charon/Charon.xcodeproj` and build the `Charon` scheme, or:
+## Building from source
+
+Needs Xcode 26.2 or later (Swift 6.2). No third-party dependencies and no paid Apple Developer account: a free Apple ID or an ad-hoc signature is enough.
 
 ```sh
-cd app/Charon
-xcodebuild -project Charon.xcodeproj -scheme Charon -derivedDataPath build -destination 'platform=macOS,arch=arm64' build
+git clone https://github.com/DouweBos/Charon.git
+cd Charon/app/Charon
+xcodebuild -project Charon.xcodeproj -scheme Charon -derivedDataPath build -destination 'platform=macOS,arch=arm64' \
+  CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= build
 open build/Build/Products/Debug/Charon.app
 ```
+
+Or open `app/Charon/Charon.xcodeproj`, pick your own team under Signing & Capabilities for each target, and build the `Charon` scheme. [CONTRIBUTING.md](CONTRIBUTING.md) covers signing options in more detail.
 
 The engine (`CharonKit`) has no UI dependencies and its tests run headlessly: `cd app/Charon/Packages/CharonKit && swift test`.
 
@@ -92,3 +98,11 @@ The engine (`CharonKit`) has no UI dependencies and its tests run headlessly: `c
 - [Uninstall](docs/uninstall.md)
 - [Optimize](docs/optimize.md)
 - [Settings](docs/settings.md)
+
+## Contributing
+
+Bug reports, fixes and features are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) to get set up, and the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues privately, as described in [SECURITY.md](SECURITY.md).
+
+## License
+
+Charon is released under the [MIT License](LICENSE). Copyright (c) 2026 Douwe Bos. More at [houwert.dev](https://houwert.dev).
