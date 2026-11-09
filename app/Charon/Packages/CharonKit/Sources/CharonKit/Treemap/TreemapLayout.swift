@@ -156,7 +156,7 @@ public enum TreemapLayout {
         var levelItems = items(tree: tree, parent: parent, unaccounted: unaccounted, limit: configuration.maxItemsPerLevel)
         var rects = SquarifiedLayout.layout(weights: levelItems.map { Double($0.size) }, in: rect)
         (levelItems, rects) = mergingUnlabeled(levelItems, rects: rects, parent: parent, in: rect, configuration: configuration)
-        // A level where one folder holds nearly everything ("Users" → "douwe") tells you nothing new,
+        // A level where one folder holds nearly everything ("Users" → "me") tells you nothing new,
         // so it doesn't use up a level of the depth budget.
         let total = levelItems.reduce(Int64(0)) { $0 + $1.size }
         let dominated = (levelItems.first?.size ?? 0) * 100 >= total * 85
