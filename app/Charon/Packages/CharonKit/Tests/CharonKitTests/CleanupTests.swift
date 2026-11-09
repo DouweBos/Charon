@@ -25,6 +25,20 @@ struct TrashPolicyTests {
             #expect(policy.refusal(for: path) == nil, "\(path) should be allowed")
         }
     }
+
+    @Test func allowsOwnItemsInsideTempFolders() {
+        let owners: [String: uid_t] = ["/private/tmp/mine": 501, "/private/var/folders/ab/xyz/T/mine": 501]
+        let policy = TrashPolicy(
+            homeDirectory: URL(fileURLWithPath: "/Users/tester"), userID: 501, owner: { owners[$0] ?? 0 }
+        )
+        for path in ["/private/tmp/mine", "/tmp/mine", "/private/var/folders/ab/xyz/T/mine", "/var/folders/ab/xyz/T/mine"] {
+            #expect(policy.refusal(for: path) == nil, "\(path) should be allowed")
+        }
+        for path in ["/private/tmp", "/tmp", "/private/var/folders/ab/xyz/T", "/private/tmp/roots",
+                     "/private/var/folders/ab/xyz/C/mine", "/private/var/folders/ab/xyz/T/roots", "/private/var/log"] {
+            #expect(policy.refusal(for: path) != nil, "\(path) should be refused")
+        }
+    }
 }
 
 struct CollectorSetTests {
